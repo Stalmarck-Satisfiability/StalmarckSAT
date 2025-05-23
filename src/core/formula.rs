@@ -17,8 +17,24 @@ impl Formula {
 
     /// Add a clause to the formula
     pub fn add_clause(&mut self, literals: Vec<i32>) {
-        // Actual implementation will go here in the future
+        // Update the number of variables based on the literals in the clause
+        for &lit in &literals {
+            let var = lit.abs() as usize;
+            if var > self.num_vars {
+                self.num_vars = var;
+            }
+        }
         self.clauses.push(literals);
+    }
+    
+    /// Set the number of variables directly
+    pub fn set_num_variables(&mut self, num_vars: usize) {
+        self.num_vars = num_vars;
+    }
+    
+    /// Pre-allocate space for the expected number of clauses
+    pub fn reserve_clauses(&mut self, num_clauses: usize) {
+        self.clauses.reserve(num_clauses);
     }
 
     /// Normalize the formula
