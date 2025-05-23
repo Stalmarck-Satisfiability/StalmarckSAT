@@ -1,0 +1,28 @@
+[package]
+name = "StalmarckSAT"
+version = "0.1.0"
+edition = "2021"
+authors = ["Liam Davis", "Sergei Leonov"]
+description = "Rust implementation of Stålmarck's method for SAT solving"
+repository = "https://github.com/Stalmarck-Satisfiability/StalmarckSAT"
+license = "MIT"
+readme = "README.md"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }  # For command-line argument parsing
+log = "0.4"                                       # Logging facade
+env_logger = "0.10"                               # Logging implementation
+thiserror = "1.0"                                 # For error handling
+
+[dev-dependencies]
+criterion = "0.5"                                 # For benchmarking
+rstest = "0.18"                                   # For parameterized testing
+tempfile = "3.10"                                 # For temporary file handling in tests
+
+[lib]
+name = "stalmarck_sat"
+path = "src/lib.rs"
+
+[[bin]]
+name = "stalmarck_sat"
+path = "src/main.rs"
