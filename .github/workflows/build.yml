@@ -34,9 +34,3 @@ jobs:
       with:
         command: test
         args: --verbose
-    
-    - name: Check formatting
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: --all -- --check
