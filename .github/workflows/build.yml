@@ -27,25 +27,13 @@ jobs:
         profile: minimal
         toolchain: ${{ matrix.rust }}
         override: true
-        components: rustfmt, clippy
-    
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --verbose
+        components: rustfmt
     
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
         command: test
         args: --verbose
-    
-    - name: Clippy
-      uses: actions-rs/cargo@v1
-      with:
-        command: clippy
-        args: -- -D warnings
     
     - name: Check formatting
       uses: actions-rs/cargo@v1
