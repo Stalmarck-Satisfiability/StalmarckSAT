@@ -24,6 +24,9 @@ pub enum ImplicationFormula {
     
     /// Implication relation (p → q)
     Implies(Box<ImplicationFormula>, Box<ImplicationFormula>),
+    
+    /// Boolean constants
+    Const(bool),
 }
 
 impl Formula {
@@ -58,7 +61,7 @@ impl Formula {
     pub fn translate_to_implication_form(&mut self) {
         if self.clauses.is_empty() {
             // Empty clause is unsatisfiable (FALSE)
-            self.implication_form = Some(ImplicationFormula::Not(Box::new(ImplicationFormula::Var(1))));
+            self.implication_form = Some(ImplicationFormula::Not(Box::new(ImplicationFormula::Const(true))));
             return;
         }
 
@@ -82,6 +85,9 @@ impl Formula {
                 ))
             );
         }
+
+        // Remove all NOTs from result
+        self.remove_nots(&mut result);
         
         self.implication_form = Some(result);
     }
@@ -90,7 +96,7 @@ impl Formula {
     fn clause_to_implication(&self, clause: &[i32]) -> ImplicationFormula {
         if clause.is_empty() {
             // Empty clause is unsatisfiable (FALSE)
-            return ImplicationFormula::Not(Box::new(ImplicationFormula::Var(1)));
+            return ImplicationFormula::Not(Box::new(ImplicationFormula::Const(true)));
         }
         
         if clause.len() == 1 {
@@ -113,6 +119,42 @@ impl Formula {
         }
 
         expr
+    }
+
+    /// Helper method to remove NOTs from the implication formula
+    fn remove_nots(&self, formula: &mut ImplicationFormula) {
+        // reconstruct formula based on its previous content without borrow checker issues
+        let original_node = std::mem::replace(formula, ImplicationFormula::Const(true));
+
+        match original_node {
+            // Transform Not(A)
+            ImplicationFormula::Not(mut sub_expr_box) => {
+                // Recursively call remove_nots on the inner expression A
+                self.remove_nots(&mut *sub_expr_box);
+                
+                // Replace the original formula with Implies(A, Const(false))
+                *formula = ImplicationFormula::Implies(
+                    sub_expr_box, // This is Box<A'> where A' is A with its own Not's removed
+                    Box::new(ImplicationFormula::Const(false)),
+                );
+            }
+            ImplicationFormula::Implies(mut left_box, mut right_box) => {
+                // Recursively call remove_nots on both children
+                self.remove_nots(&mut *left_box);
+                self.remove_nots(&mut *right_box);
+
+                // Reconstruct Implies with its children
+                *formula = ImplicationFormula::Implies(left_box, right_box);
+            }
+            ImplicationFormula::Var(variable) => {
+                // Base case, a variable is left as is
+                *formula = ImplicationFormula::Var(variable);
+            }
+            ImplicationFormula::Const(constant) => {
+                // Base case, a constant is left as is
+                *formula = ImplicationFormula::Const(constant);
+            }
+        }
     }
 
     /// Get the stored implication form

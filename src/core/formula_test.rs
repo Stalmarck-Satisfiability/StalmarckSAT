@@ -41,35 +41,95 @@ mod tests {
 
         formula.translate_to_implication_form();
         
-        // Build the expected structure manually (remove the Some wrapper)
-        let expected = ImplicationFormula::Not(
+        // Build the expected structure after NOT removal
+        let expected = ImplicationFormula::Implies(
             Box::new(ImplicationFormula::Implies(
-                Box::new(ImplicationFormula::Not(
+                Box::new(ImplicationFormula::Implies(
                     Box::new(ImplicationFormula::Implies(
                         Box::new(ImplicationFormula::Implies(
-                            Box::new(ImplicationFormula::Not(
-                                Box::new(ImplicationFormula::Var(1))
-                            )),
+                            Box::new(ImplicationFormula::Implies(
+                                Box::new(ImplicationFormula::Var(1)), 
+                                Box::new(ImplicationFormula::Const(false))
+                            )), 
                             Box::new(ImplicationFormula::Var(-2))
                         )),
-                        Box::new(ImplicationFormula::Not(
+                        Box::new(ImplicationFormula::Implies(
                             Box::new(ImplicationFormula::Implies(
-                                Box::new(ImplicationFormula::Not(
-                                    Box::new(ImplicationFormula::Var(-3))
-                                )),
+                                Box::new(ImplicationFormula::Implies(
+                                    Box::new(ImplicationFormula::Var(-3)), 
+                                    Box::new(ImplicationFormula::Const(false))
+                                )), 
                                 Box::new(ImplicationFormula::Var(4))
-                            ))
+                            )),
+                            Box::new(ImplicationFormula::Const(false))
                         ))
-                    ))
+                    )),
+                    Box::new(ImplicationFormula::Const(false))
                 )),
-                Box::new(ImplicationFormula::Not(
-                    Box::new(ImplicationFormula::Var(5))
+                Box::new(ImplicationFormula::Implies(
+                    Box::new(ImplicationFormula::Var(5)), 
+                    Box::new(ImplicationFormula::Const(false))
                 ))
-            ))
+            )),
+            Box::new(ImplicationFormula::Const(false))
         );
         
         // Assert that the result matches the expected structure
         assert_eq!(formula.get_implication_form(), Some(&expected));
+    }
+
+    #[test]
+    fn test_basic_triplet_translation() {
+        let mut formula = Formula::new();
+        formula.add_clause(vec![1, -2]);
+        formula.add_clause(vec![-3, 4]);
+        formula.add_clause(vec![5]);
+
+        formula.translate_to_implication_form();
+        
+        // Build the expected structure after NOT removal
+        let expected = ImplicationFormula::Implies(
+            Box::new(ImplicationFormula::Implies(
+                Box::new(ImplicationFormula::Implies(
+                    Box::new(ImplicationFormula::Implies(
+                        Box::new(ImplicationFormula::Implies(
+                            Box::new(ImplicationFormula::Implies(
+                                Box::new(ImplicationFormula::Var(1)), 
+                                Box::new(ImplicationFormula::Const(false))
+                            )), 
+                            Box::new(ImplicationFormula::Var(-2))
+                        )),
+                        Box::new(ImplicationFormula::Implies(
+                            Box::new(ImplicationFormula::Implies(
+                                Box::new(ImplicationFormula::Implies(
+                                    Box::new(ImplicationFormula::Var(-3)), 
+                                    Box::new(ImplicationFormula::Const(false))
+                                )), 
+                                Box::new(ImplicationFormula::Var(4))
+                            )),
+                            Box::new(ImplicationFormula::Const(false))
+                        ))
+                    )),
+                    Box::new(ImplicationFormula::Const(false))
+                )),
+                Box::new(ImplicationFormula::Implies(
+                    Box::new(ImplicationFormula::Var(5)), 
+                    Box::new(ImplicationFormula::Const(false))
+                ))
+            )),
+            Box::new(ImplicationFormula::Const(false))
+        );
+        
+        // Assert that the translated formula matches the expected structure
+        assert_eq!(formula.get_implication_form(), Some(&expected));
+
+        // Translate implication form to triplets
+        // formula.encode_formula_to_triplets();
+
+        // // Build expected triplets
+        // let expected_triplets = vec![
+
+        // ];
     }
 
     #[test]
@@ -79,7 +139,7 @@ mod tests {
         formula.translate_to_implication_form();
         
         // Empty formula should represent FALSE in our implementation
-        let expected = ImplicationFormula::Not(Box::new(ImplicationFormula::Var(1)));
+        let expected = ImplicationFormula::Not(Box::new(ImplicationFormula::Const(true)));
         assert_eq!(formula.get_implication_form(), Some(&expected));
         
         assert_eq!(formula.num_clauses(), 0);
