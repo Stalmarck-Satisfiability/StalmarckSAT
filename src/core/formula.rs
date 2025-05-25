@@ -4,7 +4,11 @@
 #[derive(Debug, Clone, Default)]
 pub struct Formula {
     clauses: Vec<Vec<i32>>,
-    // Removed unused field: negated_clauses
+
+    /// Formula in implication form
+    implication_form: Option<ImplicationFormula>, 
+
+    /// Triplet Representation of formula
     triplets: Vec<(i32, i32, i32)>,
     num_vars: usize,
 }
@@ -50,16 +54,12 @@ impl Formula {
         self.clauses.reserve(num_clauses);
     }
 
-    /// Normalize the formula
-    pub fn normalize(&mut self) {
-        // Actual implementation will go here in the future
-    }
-
     /// Translate to implication form
-    pub fn translate_to_implication_form(&mut self) -> ImplicationFormula {
+    pub fn translate_to_implication_form(&mut self) {
         if self.clauses.is_empty() {
             // Empty clause is unsatisfiable (FALSE)
-            return ImplicationFormula::Not(Box::new(ImplicationFormula::Var(1)));
+            self.implication_form = Some(ImplicationFormula::Not(Box::new(ImplicationFormula::Var(1))));
+            return;
         }
 
         let clause_exprs: Vec<ImplicationFormula> = self.clauses.iter()
@@ -83,7 +83,7 @@ impl Formula {
             );
         }
         
-        result
+        self.implication_form = Some(result);
     }
 
     /// Helper method to convert a single clause to implication form
@@ -115,8 +115,13 @@ impl Formula {
         expr
     }
 
+    /// Get the stored implication form
+    pub fn get_implication_form(&self) -> Option<&ImplicationFormula> {
+        self.implication_form.as_ref()
+    }
+
     /// Encode to triplets
-    pub fn encode_to_triplets(&mut self) {
+    pub fn encode_formula_to_triplets(&mut self) {
         // Actual implementation will go here in the future
     }
 
