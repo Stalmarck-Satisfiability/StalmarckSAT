@@ -39,9 +39,9 @@ mod tests {
         formula.add_clause(vec![-3, 4]);
         formula.add_clause(vec![5]);
 
-        let result = formula.translate_to_implication_form();
+        formula.translate_to_implication_form();
         
-        // Build the expected structure manually
+        // Build the expected structure manually (remove the Some wrapper)
         let expected = ImplicationFormula::Not(
             Box::new(ImplicationFormula::Implies(
                 Box::new(ImplicationFormula::Not(
@@ -69,18 +69,18 @@ mod tests {
         );
         
         // Assert that the result matches the expected structure
-        assert_eq!(result, expected);
+        assert_eq!(formula.get_implication_form(), Some(&expected));
     }
 
     #[test]
     fn test_empty_formula() {
         // Test that an empty formula (no clauses) works correctly
         let mut formula = Formula::new();
-        let result = formula.translate_to_implication_form();
+        formula.translate_to_implication_form();
         
         // Empty formula should represent FALSE in our implementation
         let expected = ImplicationFormula::Not(Box::new(ImplicationFormula::Var(1)));
-        assert_eq!(result, expected);
+        assert_eq!(formula.get_implication_form(), Some(&expected));
         
         assert_eq!(formula.num_clauses(), 0);
         assert_eq!(formula.num_variables(), 0);
@@ -92,10 +92,10 @@ mod tests {
         let mut formula = Formula::new();
         formula.add_clause(vec![7]);
         
-        let result = formula.translate_to_implication_form();
+        formula.translate_to_implication_form();
         let expected = ImplicationFormula::Var(7);
         
-        assert_eq!(result, expected);
+        assert_eq!(formula.get_implication_form(), Some(&expected));
         assert_eq!(formula.num_variables(), 7);
         assert_eq!(formula.num_clauses(), 1);
     }
@@ -107,13 +107,13 @@ mod tests {
         formula.add_clause(vec![]);
         formula.add_clause(vec![1, 2]);
         
-        let result = formula.translate_to_implication_form();
+        formula.translate_to_implication_form();
         
         // First clause is empty, which should be FALSE
         let empty_clause = ImplicationFormula::Not(Box::new(ImplicationFormula::Var(1)));
         
         // Result should combine the empty clause with others
-        assert_ne!(result, empty_clause); // Just verifying it's not simply returning the empty clause
+        assert_ne!(formula.get_implication_form(), Some(&empty_clause)); // Just verifying it's not simply returning the empty clause
         
         assert_eq!(formula.num_clauses(), 2);
     }
