@@ -2,6 +2,9 @@
 mod tests {
     use crate::core::formula::Formula;
     use crate::core::formula::ImplicationFormula;
+    use crate::core::formula::TripletFormula;
+    use crate::core::formula::TripletVar;
+    use std::collections::HashMap;
 
     #[test]
     fn test_clause_reservation() {
@@ -48,17 +51,23 @@ mod tests {
                     Box::new(ImplicationFormula::Implies(
                         Box::new(ImplicationFormula::Implies(
                             Box::new(ImplicationFormula::Implies(
-                                Box::new(ImplicationFormula::Var(1)), 
+                                Box::new(ImplicationFormula::Var(1)),
                                 Box::new(ImplicationFormula::Const(false))
-                            )), 
-                            Box::new(ImplicationFormula::Var(-2))
+                            )),
+                            Box::new(ImplicationFormula::Implies(
+                                Box::new(ImplicationFormula::Var(2)),
+                                Box::new(ImplicationFormula::Const(false))
+                            ))
                         )),
                         Box::new(ImplicationFormula::Implies(
                             Box::new(ImplicationFormula::Implies(
                                 Box::new(ImplicationFormula::Implies(
-                                    Box::new(ImplicationFormula::Var(-3)), 
+                                    Box::new(ImplicationFormula::Implies(
+                                        Box::new(ImplicationFormula::Var(3)),
+                                        Box::new(ImplicationFormula::Const(false))
+                                    )),
                                     Box::new(ImplicationFormula::Const(false))
-                                )), 
+                                )),
                                 Box::new(ImplicationFormula::Var(4))
                             )),
                             Box::new(ImplicationFormula::Const(false))
@@ -67,7 +76,7 @@ mod tests {
                     Box::new(ImplicationFormula::Const(false))
                 )),
                 Box::new(ImplicationFormula::Implies(
-                    Box::new(ImplicationFormula::Var(5)), 
+                    Box::new(ImplicationFormula::Var(5)),
                     Box::new(ImplicationFormula::Const(false))
                 ))
             )),
@@ -94,17 +103,23 @@ mod tests {
                     Box::new(ImplicationFormula::Implies(
                         Box::new(ImplicationFormula::Implies(
                             Box::new(ImplicationFormula::Implies(
-                                Box::new(ImplicationFormula::Var(1)), 
+                                Box::new(ImplicationFormula::Var(1)),
                                 Box::new(ImplicationFormula::Const(false))
-                            )), 
-                            Box::new(ImplicationFormula::Var(-2))
+                            )),
+                            Box::new(ImplicationFormula::Implies(
+                                Box::new(ImplicationFormula::Var(2)),
+                                Box::new(ImplicationFormula::Const(false))
+                            ))
                         )),
                         Box::new(ImplicationFormula::Implies(
                             Box::new(ImplicationFormula::Implies(
                                 Box::new(ImplicationFormula::Implies(
-                                    Box::new(ImplicationFormula::Var(-3)), 
+                                    Box::new(ImplicationFormula::Implies(
+                                        Box::new(ImplicationFormula::Var(3)),
+                                        Box::new(ImplicationFormula::Const(false))
+                                    )),
                                     Box::new(ImplicationFormula::Const(false))
-                                )), 
+                                )),
                                 Box::new(ImplicationFormula::Var(4))
                             )),
                             Box::new(ImplicationFormula::Const(false))
@@ -113,23 +128,62 @@ mod tests {
                     Box::new(ImplicationFormula::Const(false))
                 )),
                 Box::new(ImplicationFormula::Implies(
-                    Box::new(ImplicationFormula::Var(5)), 
+                    Box::new(ImplicationFormula::Var(5)),
                     Box::new(ImplicationFormula::Const(false))
                 ))
             )),
             Box::new(ImplicationFormula::Const(false))
         );
-        
+
         // Assert that the translated formula matches the expected structure
         assert_eq!(formula.get_implication_form(), Some(&expected));
 
         // Translate implication form to triplets
-        // formula.encode_formula_to_triplets();
-
-        // // Build expected triplets
-        // let expected_triplets = vec![
-
-        // ];
+        formula.encode_formula_to_triplets();
+        
+        // Build expected triplets
+        let b1 = 1005;
+        let b2 = 1006;
+        let b3 = 1007;
+        let b4 = 1008;
+        let b5 = 1009;
+        let b6 = 1010;
+        let b7 = 1011;
+        let b8 = 1012;
+        let b9 = 1013;
+        
+        let expected_triplets = TripletFormula {
+            triplets: vec![
+                (TripletVar::Var(b1), TripletVar::Var(1), TripletVar::Const(false)),
+                (TripletVar::Var(b2), TripletVar::Var(2), TripletVar::Const(false)),
+                (TripletVar::Var(b3), TripletVar::Var(3), TripletVar::Var(4)),
+                (TripletVar::Var(b4), TripletVar::Var(5), TripletVar::Const(false)),
+                (TripletVar::Var(b5), TripletVar::Var(b3), TripletVar::Const(false)),
+                (TripletVar::Var(b6), TripletVar::Var(b1), TripletVar::Var(b2)),
+                (TripletVar::Var(b7), TripletVar::Var(b6), TripletVar::Var(b5)),
+                (TripletVar::Var(b8), TripletVar::Var(b7), TripletVar::Var(b4)),
+                (TripletVar::Var(b9), TripletVar::Var(b8), TripletVar::Const(false)),
+            ],
+            bridge_vars: {
+                let mut map = HashMap::new();
+                map.insert(TripletVar::Var(b1), 0);
+                map.insert(TripletVar::Var(b2), 1);
+                map.insert(TripletVar::Var(b3), 2);
+                map.insert(TripletVar::Var(b4), 3);
+                map.insert(TripletVar::Var(b5), 4);
+                map.insert(TripletVar::Var(b6), 5);
+                map.insert(TripletVar::Var(b7), 6);
+                map.insert(TripletVar::Var(b8), 7);
+                map.insert(TripletVar::Var(b9), 8);
+                map
+            },
+            next_bridge_var: b9 + 1,
+            root_var: Some(TripletVar::Var(b9)),
+            max_original_var: 5,
+        };
+        
+        // Assert that the encoded triplets match our expected structure
+        assert_eq!(formula.get_triplets(), Some(&expected_triplets));
     }
 
     #[test]

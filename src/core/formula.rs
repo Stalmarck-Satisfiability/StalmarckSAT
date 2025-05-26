@@ -1,4 +1,5 @@
 // Formula implementation for Stalmarck's algorithm
+use std::collections::HashMap;
 
 /// Represents a formula in propositional logic
 #[derive(Debug, Clone, Default)]
@@ -9,7 +10,7 @@ pub struct Formula {
     implication_form: Option<ImplicationFormula>, 
 
     /// Triplet Representation of formula
-    triplets: Vec<(i32, i32, i32)>,
+    triplets: Option<TripletFormula>,
     num_vars: usize,
 }
 
@@ -27,6 +28,35 @@ pub enum ImplicationFormula {
     
     /// Boolean constants
     Const(bool),
+}
+
+/// Represents a variable or constant in triplet form
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum TripletVar {
+    /// A variable (positive or negative literal)
+    Var(i32),
+    
+    /// Boolean constants
+    Const(bool),
+}
+
+/// Represents a formula in triplet form for Stalmarck's algorithm
+#[derive(Debug, Clone, PartialEq)]
+pub struct TripletFormula {
+    /// Collection of triplets (a, b, c) where each represents a logical relation
+    pub triplets: Vec<(TripletVar, TripletVar, TripletVar)>,
+    
+    /// Mapping from bridge variables (b1, b2, etc.) to their corresponding triplet index
+    pub bridge_vars: std::collections::HashMap<TripletVar, usize>,
+    
+    /// The next available bridge variable ID
+    pub next_bridge_var: i32,
+    
+    /// The root variable representing the entire formula
+    pub root_var: Option<TripletVar>,
+    
+    /// Maximum original variable ID (not including bridge variables)
+    pub max_original_var: i32,
 }
 
 impl Formula {
@@ -123,18 +153,17 @@ impl Formula {
 
     /// Helper method to remove NOTs from the implication formula
     fn remove_nots(&self, formula: &mut ImplicationFormula) {
-        // reconstruct formula based on its previous content without borrow checker issues
+        // Perform a "take and replace" to modify the enum variant in place
         let original_node = std::mem::replace(formula, ImplicationFormula::Const(true));
 
         match original_node {
-            // Transform Not(A)
             ImplicationFormula::Not(mut sub_expr_box) => {
-                // Recursively call remove_nots on the inner expression A
+                // Recursively call remove_nots on the inner expression
                 self.remove_nots(&mut *sub_expr_box);
                 
-                // Replace the original formula with Implies(A, Const(false))
+                // Replace Not(A) with Implies(A, Const(false))
                 *formula = ImplicationFormula::Implies(
-                    sub_expr_box, // This is Box<A'> where A' is A with its own Not's removed
+                    sub_expr_box,
                     Box::new(ImplicationFormula::Const(false)),
                 );
             }
@@ -143,15 +172,27 @@ impl Formula {
                 self.remove_nots(&mut *left_box);
                 self.remove_nots(&mut *right_box);
 
-                // Reconstruct Implies with its children
+                // Reconstruct the Implies node with its children
                 *formula = ImplicationFormula::Implies(left_box, right_box);
             }
-            ImplicationFormula::Var(variable) => {
-                // Base case, a variable is left as is
-                *formula = ImplicationFormula::Var(variable);
+            ImplicationFormula::Var(id) => {
+                if id < 0 {
+                    // Transform Var(-k) into Implies(Var(k), Const(false)).
+                    let positive_id = id.abs();
+                    *formula = ImplicationFormula::Implies(
+                        Box::new(ImplicationFormula::Var(positive_id)),
+                        Box::new(ImplicationFormula::Const(false)),
+                    );
+                    // The children of this new Implies node are Var(positive_id) and Const(false).
+                    // These are already "clean" in terms of Not nodes or negative Vars,
+                    // so no further recursive call on `*formula` itself is needed here.
+                } else {
+                    // Positive literal, restore it as is.
+                    *formula = ImplicationFormula::Var(id);
+                }
             }
             ImplicationFormula::Const(constant) => {
-                // Base case, a constant is left as is
+                // Constants are left as is, restore it.
                 *formula = ImplicationFormula::Const(constant);
             }
         }
@@ -162,9 +203,14 @@ impl Formula {
         self.implication_form.as_ref()
     }
 
-    /// Encode to triplets
+    /// Encode the formula into triplets
     pub fn encode_formula_to_triplets(&mut self) {
-        // Actual implementation will go here in the future
+
+    }
+
+    /// Get the triplets representation
+    pub fn get_triplets(&self) -> Option<&TripletFormula> {
+        self.triplets.as_ref()
     }
 
     /// Get the number of variables in the formula
@@ -175,11 +221,6 @@ impl Formula {
     /// Get the number of clauses in the formula
     pub fn num_clauses(&self) -> usize {
         self.clauses.len()
-    }
-
-    /// Get the triplets representation
-    pub fn get_triplets(&self) -> &[(i32, i32, i32)] {
-        &self.triplets
     }
 
     /// Get the clauses
