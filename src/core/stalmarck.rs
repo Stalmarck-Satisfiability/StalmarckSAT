@@ -1,6 +1,6 @@
 // Stalmarck solver implementation
-use crate::Result;
 use crate::core::formula::Formula;
+use crate::Result;
 // Removed unused imports
 // use crate::solver::solver::Solver;
 // use crate::parser::dimacs::Parser;
