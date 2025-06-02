@@ -23,13 +23,17 @@ impl Solver {
     pub fn solve(&mut self, _formula: &Formula) -> bool {
         // Reset state
         self.reset();
-        
+
         // Placeholder implementation
         false
     }
 
     /// Apply simple rules to the formula
-    pub fn apply_simple_rules(&mut self, _formula_triplets: &[(i32, i32, i32)], _formula: &Formula) -> bool {
+    pub fn apply_simple_rules(
+        &mut self,
+        _formula_triplets: &[(i32, i32, i32)],
+        _formula: &Formula,
+    ) -> bool {
         // Placeholder implementation
         true
     }
@@ -58,7 +62,7 @@ impl Solver {
         self.current_triplets.clear();
         self.current_num_variables = 0;
     }
-    
+
     /// Verify that the current assignment satisfies the formula
     pub fn verify_assignment(&self) -> bool {
         // Placeholder implementation

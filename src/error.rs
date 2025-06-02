@@ -18,11 +18,11 @@ pub enum Error {
     /// Variable out of bounds
     #[error("Variable out of bounds: {0}")]
     VariableOutOfBounds(i32),
-    
+
     /// Solver errors
     #[error("Solver error: {0}")]
     Solver(String),
-    
+
     /// Timeout occurred
     #[error("Solver timed out after {0} seconds")]
     Timeout(f64),

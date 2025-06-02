@@ -1,7 +1,7 @@
 use clap::Parser;
 // Import from our library
-use stalmarck_sat::StalmarckSolver;
 use stalmarck_sat::Result;
+use stalmarck_sat::StalmarckSolver;
 
 /// Stålmarck's SAT solver
 #[derive(Parser, Debug)]
@@ -36,8 +36,15 @@ fn main() -> Result<()> {
     match solver.solve_from_file(&args.file_path) {
         Ok(_) => {
             // Print the result
-            println!("{}", if solver.is_tautology() { "SAT" } else { "UNSAT" });
-            
+            println!(
+                "{}",
+                if solver.is_tautology() {
+                    "SAT"
+                } else {
+                    "UNSAT"
+                }
+            );
+
             // Return standard SAT solver exit codes
             if solver.is_tautology() {
                 std::process::exit(10);
