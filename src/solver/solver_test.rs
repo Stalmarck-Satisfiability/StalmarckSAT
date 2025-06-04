@@ -216,7 +216,7 @@ mod solver_test {
             TripletVar::Var(var_y_id),
             TripletVar::Const(false),
         ));
-        solver.assignments.insert(var_x_id, false); // Pre-assign x to false
+        solver.assignments.insert(var_x_id, false);
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -233,12 +233,12 @@ mod solver_test {
     #[test]
     fn test_simple_rule_6_propagation() {
         let mut solver = Solver::new();
-        let var_x_id = 1; // This variable will be used for both trip_a and trip_b
+        let var_x_id = 1;
         let var_z_id = 2;
-        // Rule 6: (x, x, z) => x=1, z=1
+
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
-            TripletVar::Var(var_x_id), // trip_a and trip_b are the same variable
+            TripletVar::Var(var_x_id),
             TripletVar::Var(var_z_id),
         ));
         solver.apply_simple_rules();
@@ -263,8 +263,8 @@ mod solver_test {
     fn test_simple_rule_7_propagation() {
         let mut solver = Solver::new();
         let var_x_id = 1;
-        let var_y_id = 2; // This variable will be used for both trip_b and trip_c
-                          // Rule 7: (x, y, y) => x=1
+        let var_y_id = 2;
+
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Var(var_y_id),
@@ -280,6 +280,52 @@ mod solver_test {
         assert!(
             !solver.has_contradiction(),
             "Rule 7: No contradiction expected"
+        );
+    }
+
+    #[test]
+    fn test_branch_an_solve() {
+        let mut solver = Solver::new();
+        let v_id = 1;
+
+        solver.current_triplets.push((
+            TripletVar::Var(v_id),
+            TripletVar::Const(false),
+            TripletVar::Const(true),
+        ));
+
+        solver.current_triplets.push((
+            TripletVar::Var(v_id),
+            TripletVar::Const(true),
+            TripletVar::Const(false),
+        ));
+
+        assert!(
+            solver.assignments.is_empty(),
+            "Assignments should be empty initially."
+        );
+        assert!(
+            !solver.has_contradiction(),
+            "Solver should not have a contradiction before branching."
+        );
+        assert!(
+            !solver.has_complete_assignment(),
+            "Solver should not have a complete assignment before branching."
+        );
+
+        solver.branch_and_solve();
+
+        assert!(
+            solver.has_contradiction(),
+            "Solver should not have a contradiction after branching."
+        );
+        assert!(
+            !solver.has_complete_assignment(),
+            "Solver should have a complete assignment after branching."
+        );
+        assert!(
+            solver.assignments.is_empty(),
+            "Assignments should be empty after branching and solving."
         );
     }
 }

@@ -39,12 +39,15 @@ impl Solver {
             // Repeatedly apply simple rules
             self.apply_simple_rules();
 
+            if self.has_contradiction_flag || self.has_complete_assignment_flag {
+                break;
+            }
+
             // Apply branching
             self.branch_and_solve()
         }
 
-        // Placeholder implementation
-        false
+        !self.has_contradiction_flag
     }
 
     /// Apply simple rules to the formula
@@ -177,8 +180,79 @@ impl Solver {
         }
     }
 
-    /// Branch on a variable and attempt to solve
-    pub fn branch_and_solve(&mut self) {}
+    /// Branch on a variable with the dilemma rule and attempt to solve
+    pub fn branch_and_solve(&mut self) {
+        // Find unassigned variable present in current_triplets
+        let mut unassigned_var_id_opt: Option<i32> = None;
+        let mut vars_in_triplets = std::collections::HashSet::new();
+
+        for (triplet_a, triplet_b, triplet_c) in &self.current_triplets {
+            for tv in [triplet_a, triplet_b, triplet_c] {
+                if let TripletVar::Var(id) = tv {
+                    vars_in_triplets.insert(*id);
+                }
+            }
+        }
+
+        for var_id in vars_in_triplets {
+            if !self.assignments.contains_key(&var_id) {
+                unassigned_var_id_opt = Some(var_id);
+                break;
+            }
+        }
+
+        // If no unassigned variable relevant to triplets, current assignment is complete
+        if unassigned_var_id_opt.is_none() {
+            self.has_complete_assignment_flag = true;
+            return;
+        }
+
+        let v_id = unassigned_var_id_opt.unwrap();
+
+        // Store current assignment state
+        let original_assignments = self.assignments.clone();
+
+        // Branch on v_id = true
+        self.assignments.insert(v_id, true); // Changed from assert to insert
+        self.has_contradiction_flag = false;
+        self.apply_simple_rules();
+        let contradiction_ont_true = self.has_contradiction_flag;
+        let assignments_after_true = self.assignments.clone();
+
+        // Restore state
+        self.assignments = original_assignments.clone();
+
+        // Branch on v_id = false
+        self.assignments.insert(v_id, false); // Changed from assert to insert
+        self.has_contradiction_flag = false;
+        self.apply_simple_rules();
+        let contradiction_ont_false = self.has_contradiction_flag;
+        let assignments_after_false = self.assignments.clone();
+
+        // Analyze results and update solver state
+        if contradiction_ont_true && contradiction_ont_false {
+            // Corrected variable names
+            // Both branches lead to contradictions
+            self.assignments = original_assignments;
+            self.has_contradiction_flag = true;
+        } else if contradiction_ont_true && !contradiction_ont_false {
+            // Corrected variable names
+            // Commit to false branch
+            self.assignments = assignments_after_false;
+            self.has_contradiction_flag = false;
+        } else if !contradiction_ont_true && contradiction_ont_false {
+            // Corrected variable names
+            // Commit to true branch
+            self.assignments = assignments_after_true;
+            self.has_contradiction_flag = false;
+        } else {
+            // Neither branch leads to a contradiction
+            // Keep assignments from one of the successful branches, e.g., true branch
+            self.assignments = assignments_after_true;
+            self.has_complete_assignment_flag = true; // Corrected to assign to the flag field
+            self.has_contradiction_flag = false;
+        }
+    }
 
     /// Check if a contradiction was found
     pub fn has_contradiction(&self) -> bool {
