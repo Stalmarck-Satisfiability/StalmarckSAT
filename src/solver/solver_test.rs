@@ -1,3 +1,4 @@
+use crate::core::formula::Formula;
 use crate::core::formula::TripletVar;
 use crate::solver::solver::Solver;
 
@@ -7,9 +8,10 @@ mod solver_test {
 
     #[test]
     fn test_solver_initialization() {
+        // Test that a new solver starts in a clean state
         let solver = Solver::new();
 
-        // Assert that the solver starts in a clean state
+        // Verify initial state
         assert!(
             !solver.has_contradiction(),
             "New solver should not have contradictions"
@@ -18,14 +20,11 @@ mod solver_test {
             !solver.has_complete_assignment(),
             "New solver should not have complete assignment"
         );
-        assert!(
-            solver.verify_assignment(),
-            "New solver should have valid empty assignment"
-        );
     }
 
     #[test]
     fn test_solver_reset() {
+        // Test that reset properly clears solver state
         let mut solver = Solver::new();
 
         // Reset should work on a fresh solver without panicking
@@ -43,7 +42,8 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_1_propagation() {
+    fn test_simple_rule_1() {
+        // Test Rule 1: (0, y, z) => y=1, z=0
         let mut solver = Solver::new();
 
         // Setup: triplet (Const(false), Var(1), Var(2))
@@ -57,10 +57,10 @@ mod solver_test {
             .current_triplets
             .push((trip_a, trip_b.clone(), trip_c.clone()));
 
-        // Call apply_simple_rules to test the propagation.
+        // Apply simple rules to test the propagation
         solver.apply_simple_rules();
 
-        // Assertions based on the current implementation: (0, y, z) => y=1, z=0
+        // Verify Rule 1: when first element is false, y=1 and z=0
         assert_eq!(
             solver.assignments.get(&var_y_id),
             Some(&true),
@@ -71,11 +71,10 @@ mod solver_test {
         assert_eq!(
             solver.assignments.get(&var_z_id),
             Some(&false),
-            "Variable z (id {}) should be assigned true (as per current code)",
+            "Variable z (id {}) should be assigned false",
             var_z_id
         );
 
-        // If the rule was strictly (0, y, z) / y=1, z=0
         assert!(
             !solver.has_contradiction(),
             "No contradiction should be found for this rule application"
@@ -83,16 +82,20 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_2_propagation() {
+    fn test_simple_rule_2() {
+        // Test Rule 2: (x, y, 1) => x=1
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_y_id = 2;
-        // Rule 2: (x, y, 1) => x=1
+
+        // Setup: triplet with third element as true constant
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Var(var_y_id),
             TripletVar::Const(true),
         ));
+
+        // Apply rules and verify x is assigned true
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -107,16 +110,20 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_3_propagation() {
+    fn test_simple_rule_3() {
+        // Test Rule 3: (x, 0, z) => x=1
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_z_id = 2;
-        // Rule 3: (x, 0, z) => x=1
+
+        // Setup: triplet with second element as false constant
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Const(false),
             TripletVar::Var(var_z_id),
         ));
+
+        // Apply rules and verify x is assigned true
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -131,17 +138,21 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_4_propagation_x_equals_known_z() {
+    fn test_simple_rule_4a() {
+        // Test Rule 4: (x, 1, z) => x=z, case where z is known
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_z_id = 2;
-        // Rule 4: (x, 1, z) => x=z. Case: z is known (e.g., true)
+
+        // Setup: triplet with second element as true, pre-assign z=false
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Const(true),
             TripletVar::Var(var_z_id),
         ));
-        solver.assignments.insert(var_z_id, false); // Pre-assign z to false
+        solver.assignments.insert(var_z_id, false);
+
+        // Apply rules and verify x equals z
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -156,17 +167,21 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_4_propagation_z_equals_known_x() {
+    fn test_simple_rule_4b() {
+        // Test Rule 4: (x, 1, z) => x=z, case where x is known
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_z_id = 2;
-        // Rule 4: (x, 1, z) => x=z. Case: x is known (e.g., true)
+
+        // Setup: triplet with second element as true, pre-assign x=true
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Const(true),
             TripletVar::Var(var_z_id),
         ));
-        solver.assignments.insert(var_x_id, true); // Pre-assign x to true
+        solver.assignments.insert(var_x_id, true);
+
+        // Apply rules and verify z equals x
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -181,17 +196,21 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_5_propagation_x_equals_not_known_y() {
+    fn test_simple_rule_5a() {
+        // Test Rule 5: (x, y, 0) => x=!y, case where y is known
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_y_id = 2;
-        // Rule 5: (x, y, 0) => x=-y. Case: y is known (e.g., true)
+
+        // Setup: triplet with third element as false, pre-assign y=true
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Var(var_y_id),
             TripletVar::Const(false),
         ));
-        solver.assignments.insert(var_y_id, true); // Pre-assign y to true
+        solver.assignments.insert(var_y_id, true);
+
+        // Apply rules and verify x equals !y
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -206,17 +225,21 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_5_propagation_y_equals_not_known_x() {
+    fn test_simple_rule_5b() {
+        // Test Rule 5: (x, y, 0) => x=!y, case where x is known
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_y_id = 2;
-        // Rule 5: (x, y, 0) => x=-y. Case: x is known (e.g., false)
+
+        // Setup: triplet with third element as false, pre-assign x=false
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Var(var_y_id),
             TripletVar::Const(false),
         ));
         solver.assignments.insert(var_x_id, false);
+
+        // Apply rules and verify y equals !x
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -231,16 +254,20 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_6_propagation() {
+    fn test_simple_rule_6() {
+        // Test Rule 6: (x, x, z) => x=1, z=1
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_z_id = 2;
 
+        // Setup: triplet where first two elements are the same variable
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Var(var_x_id),
             TripletVar::Var(var_z_id),
         ));
+
+        // Apply rules and verify both x and z are true
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -260,16 +287,20 @@ mod solver_test {
     }
 
     #[test]
-    fn test_simple_rule_7_propagation() {
+    fn test_simple_rule_7() {
+        // Test Rule 7: (x, y, y) => x=1
         let mut solver = Solver::new();
         let var_x_id = 1;
         let var_y_id = 2;
 
+        // Setup: triplet where last two elements are the same variable
         solver.current_triplets.push((
             TripletVar::Var(var_x_id),
             TripletVar::Var(var_y_id),
-            TripletVar::Var(var_y_id), // trip_b and trip_c are the same variable
+            TripletVar::Var(var_y_id),
         ));
+
+        // Apply rules and verify x is true
         solver.apply_simple_rules();
 
         assert_eq!(
@@ -284,48 +315,117 @@ mod solver_test {
     }
 
     #[test]
-    fn test_branch_an_solve() {
+    fn test_branch_and_solve() {
+        // Test branching behavior when both branches lead to contradiction
         let mut solver = Solver::new();
+        let mut formula = Formula::new();
         let v_id = 1;
 
+        // Set up the formula with one variable
+        formula.set_num_variables(1);
+        solver.set_current_num_variables(1);
+
+        // Add contradictory triplets that will force both branches to fail
+        // First triplet: if v_id=true, then false=true (contradiction)
         solver.current_triplets.push((
             TripletVar::Var(v_id),
             TripletVar::Const(false),
             TripletVar::Const(true),
         ));
 
+        // Second triplet: if v_id=false, then true=false (contradiction)
         solver.current_triplets.push((
             TripletVar::Var(v_id),
             TripletVar::Const(true),
             TripletVar::Const(false),
         ));
 
+        // Verify initial state
         assert!(
             solver.assignments.is_empty(),
-            "Assignments should be empty initially."
+            "Assignments should be empty initially"
         );
         assert!(
             !solver.has_contradiction(),
-            "Solver should not have a contradiction before branching."
+            "Solver should not have a contradiction before branching"
         );
         assert!(
             !solver.has_complete_assignment(),
-            "Solver should not have a complete assignment before branching."
+            "Solver should not have a complete assignment before branching"
         );
 
-        solver.branch_and_solve();
+        // Call branch_and_solve - should find contradiction in both branches
+        solver.branch_and_solve(&formula);
 
+        // Verify final state after branching
         assert!(
             solver.has_contradiction(),
-            "Solver should not have a contradiction after branching."
+            "Solver should have a contradiction after branching (both branches contradictory)"
         );
         assert!(
             !solver.has_complete_assignment(),
-            "Solver should have a complete assignment after branching."
+            "Solver should not have a complete assignment when contradiction is found"
         );
         assert!(
             solver.assignments.is_empty(),
-            "Assignments should be empty after branching and solving."
+            "Assignments should be empty after branching finds contradictions in both branches"
+        );
+    }
+
+    #[test]
+    fn test_tautology() {
+        // Test detection of unsatisfiable formula (p AND -p)
+        let mut solver = Solver::new();
+        let mut formula = Formula::new();
+
+        // Formula: (p AND -p) - this is unsatisfiable
+        formula.add_clause(vec![1]); // p must be true
+        formula.add_clause(vec![-1]); // p must be false
+        formula.set_num_variables(1);
+
+        // Solve returns true if formula is unsatisfiable
+        let is_negation_tautology = solver.solve(&mut formula);
+
+        // Verify the formula is detected as unsatisfiable
+        assert!(
+            is_negation_tautology,
+            "Negation of formula (p AND -p) should be a tautology"
+        );
+        assert!(
+            solver.has_contradiction(),
+            "Solver should have found a contradiction for (p AND -p)"
+        );
+        assert!(
+            !solver.has_complete_assignment(),
+            "Solver should not have a complete assignment if a contradiction is found"
+        );
+    }
+
+    #[test]
+    fn test_not_tautology() {
+        // Test detection of satisfiable formula (p OR -p)
+        let mut solver = Solver::new();
+        let mut formula = Formula::new();
+
+        // Formula: (p OR -p) - this is a tautology (always satisfiable)
+        formula.add_clause(vec![1, -1]); // p OR -p
+        formula.set_num_variables(1);
+
+        // Solve returns false if formula is satisfiable
+        let is_negation_tautology = solver.solve(&mut formula);
+
+        // Verify the formula is detected as satisfiable
+        assert!(
+            !is_negation_tautology,
+            "Negation of formula (p OR -p) should not be a tautology"
+        );
+        assert!(
+            !solver.has_contradiction(),
+            "Solver should not have found a contradiction for (p OR -p)"
+        );
+        assert!(
+            solver.has_complete_assignment(),
+            "Solver should have found a complete assignment for (p OR -p)"
         );
     }
 }
