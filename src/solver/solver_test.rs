@@ -1,5 +1,6 @@
 use crate::core::formula::TripletVar;
 use crate::solver::solver::Solver;
+use crate::core::formula::Formula;
 
 #[cfg(test)]
 mod solver_test {
@@ -327,5 +328,40 @@ mod solver_test {
             solver.assignments.is_empty(),
             "Assignments should be empty after branching and solving."
         );
+    }
+
+    #[test]
+    fn test_tautology() {
+        let mut solver = Solver::new();
+        let mut formula = Formula::new();
+
+        // Formula: (p AND -p) - this is unsatisfiable
+        formula.add_clause(vec![1]);
+        formula.add_clause(vec![-1]);
+        formula.set_num_variables(1);
+
+        let is_negation_tautology = solver.solve(&mut formula);
+
+        // The negation of (p AND -p) is (p OR -p), which IS a tautology
+        assert!(is_negation_tautology, "Negation of formula (p AND -p) should be a tautology.");
+        assert!(solver.has_contradiction(), "Solver should have found a contradiction for (p AND -p).");
+        assert!(!solver.has_complete_assignment(), "Solver should not have a complete assignment if a contradiction is found.");
+    }
+
+    #[test]
+    fn test_not_tautology() {
+        let mut solver = Solver::new();
+        let mut formula = Formula::new();
+
+        // Formula: (p OR -p) - this is a tautology
+        formula.add_clause(vec![1, -1]);
+        formula.set_num_variables(1);
+
+        let is_negation_tautology = solver.solve(&mut formula);
+
+        // The negation of (p OR -p) is (p AND -p), which is NOT a tautology
+        assert!(!is_negation_tautology, "Negation of formula (p OR -p) should not be a tautology.");
+        assert!(!solver.has_contradiction(), "Solver should not have found a contradiction for (p OR -p).");
+        assert!(solver.has_complete_assignment(), "Solver should have found a complete assignment for (p OR -p).");
     }
 }

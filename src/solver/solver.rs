@@ -35,19 +35,32 @@ impl Solver {
             self.current_triplets = triplet_formula.triplets.clone();
         }
 
-        while !self.has_complete_assignment_flag && !self.has_contradiction_flag {
-            // Repeatedly apply simple rules
-            self.apply_simple_rules();
+        // Set the number of variables for complete assignment check
+        self.current_num_variables = formula.num_variables();
 
-            if self.has_contradiction_flag || self.has_complete_assignment_flag {
+        // Apply simple rules first
+        self.apply_simple_rules();
+
+        // Main solving loop
+        while !self.has_complete_assignment_flag && !self.has_contradiction_flag {
+            // Apply branching
+            self.branch_and_solve();
+            
+            // If branching found a contradiction in all branches, we're done
+            if self.has_contradiction_flag {
                 break;
             }
-
-            // Apply branching
-            self.branch_and_solve()
+            
+            // If we found a complete assignment, we're done
+            if self.has_complete_assignment_flag {
+                break;
+            }
+            
+            // Apply simple rules after branching
+            self.apply_simple_rules();
         }
 
-        !self.has_contradiction_flag
+        self.has_contradiction_flag
     }
 
     /// Apply simple rules to the formula
