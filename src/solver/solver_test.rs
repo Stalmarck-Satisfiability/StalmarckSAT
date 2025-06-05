@@ -373,17 +373,17 @@ mod solver_test {
     }
 
     #[test]
-    fn test_tautology() {
+    fn test_simple_tautology() {
         // Test detection of unsatisfiable formula (p AND -p)
         let mut solver = Solver::new();
         let mut formula = Formula::new();
 
         // Formula: (p AND -p) - this is unsatisfiable
-        formula.add_clause(vec![1]); // p must be true
-        formula.add_clause(vec![-1]); // p must be false
+        formula.add_clause(vec![1]);
+        formula.add_clause(vec![-1]);
         formula.set_num_variables(1);
 
-        // Solve returns true if formula is unsatisfiable
+        // Solve returns true if formula is unsatisfiable, meaning its negation is a tautology
         let is_negation_tautology = solver.solve(&mut formula);
 
         // Verify the formula is detected as unsatisfiable
@@ -402,16 +402,16 @@ mod solver_test {
     }
 
     #[test]
-    fn test_not_tautology() {
+    fn test_simple_not_tautology() {
         // Test detection of satisfiable formula (p OR -p)
         let mut solver = Solver::new();
         let mut formula = Formula::new();
 
-        // Formula: (p OR -p) - this is a tautology (always satisfiable)
-        formula.add_clause(vec![1, -1]); // p OR -p
+        // Formula: (p OR -p) - this is a tautology
+        formula.add_clause(vec![1, -1]);
         formula.set_num_variables(1);
 
-        // Solve returns false if formula is satisfiable
+        // Solve returns false if formula is satisfiable, meaning its negation is not a tautology
         let is_negation_tautology = solver.solve(&mut formula);
 
         // Verify the formula is detected as satisfiable
@@ -426,6 +426,91 @@ mod solver_test {
         assert!(
             solver.has_complete_assignment(),
             "Solver should have found a complete assignment for (p OR -p)"
+        );
+    }
+
+    #[test]
+    fn test_pq_nq_tautology() {
+        // Formula: (p) AND (-p OR q) AND (-q) - Unsatisfiable
+        let mut solver = Solver::new();
+        let mut formula = Formula::new();
+
+        formula.add_clause(vec![1]);
+        formula.add_clause(vec![-1, 2]);
+        formula.add_clause(vec![-2]);
+        formula.set_num_variables(2);
+
+        let is_negation_tautology = solver.solve(&mut formula);
+
+        assert!(
+            is_negation_tautology,
+            "Negation of (p) AND (-p OR q) AND (-q) should be a tautology"
+        );
+        assert!(
+            solver.has_contradiction(),
+            "Solver should find a contradiction for (p) AND (-p OR q) AND (-q)"
+        );
+        assert!(
+            !solver.has_complete_assignment(),
+            "Solver should not have a complete assignment if a contradiction is found"
+        );
+    }
+
+    #[test]
+    fn test_forcing_a_and_not_a_tautology() {
+        // Formula: (a OR b) AND (a OR -b) AND (-a OR c) AND (-a OR -c) - Unsatisfiable
+        let mut solver = Solver::new();
+        let mut formula = Formula::new();
+
+        formula.add_clause(vec![1, 2]);
+        formula.add_clause(vec![1, -2]);
+        formula.add_clause(vec![-1, 3]);
+        formula.add_clause(vec![-1, -3]);
+        formula.set_num_variables(3);
+
+        let is_negation_tautology = solver.solve(&mut formula);
+
+        assert!(
+            is_negation_tautology,
+            "Negation of (a OR b) AND (a OR -b) AND (-a OR c) AND (-a OR -c) should be a tautology"
+        );
+        assert!(
+            solver.has_contradiction(),
+            "Solver should find a contradiction for this formula"
+        );
+        assert!(
+            !solver.has_complete_assignment(),
+            "Solver should not have a complete assignment if a contradiction is found"
+        );
+    }
+
+    #[test]
+    fn test_implies_y_and_not_y_tautology() {
+        // Renamed from test_unsatisfiable_implies_y_and_not_y
+        // Formula: (x OR y) AND (-x OR y) AND (x OR -y) AND (-x OR -y) - Unsatisfiable
+        // Its negation IS a tautology.
+        let mut solver = Solver::new();
+        let mut formula = Formula::new();
+
+        formula.add_clause(vec![1, 2]);
+        formula.add_clause(vec![-1, 2]);
+        formula.add_clause(vec![1, -2]);
+        formula.add_clause(vec![-1, -2]);
+        formula.set_num_variables(2);
+
+        let is_negation_tautology = solver.solve(&mut formula); // Renamed variable
+
+        assert!(
+            is_negation_tautology, // Check if negation is a tautology
+            "Negation of (x OR y) AND (-x OR y) AND (x OR -y) AND (-x OR -y) should be a tautology"
+        );
+        assert!(
+            solver.has_contradiction(),
+            "Solver should find a contradiction for this formula"
+        );
+        assert!(
+            !solver.has_complete_assignment(),
+            "Solver should not have a complete assignment if a contradiction is found"
         );
     }
 }
