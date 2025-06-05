@@ -1,0 +1,5 @@
+c Trivially unsatisfiable: (x1) AND (-x1)
+c Expected: UNSAT
+p cnf 1 2
+1 0
+-1 0

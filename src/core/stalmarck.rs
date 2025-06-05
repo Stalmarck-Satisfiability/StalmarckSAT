@@ -1,14 +1,13 @@
-// Stalmarck solver implementation
 use crate::core::formula::Formula;
+use crate::parser::dimacs::Parser;
+use crate::solver::solver::Solver;
 use crate::Result;
-// Removed unused imports
-// use crate::solver::solver::Solver;
-// use crate::parser::dimacs::Parser;
 
 /// Main solver class for Stålmarck's method
 #[derive(Debug, Default)]
 pub struct StalmarckSolver {
-    // Removed unused fields: solver, parser
+    solver: Solver,
+    parser: Parser,
     is_tautology_result: bool,
     timeout: f64,
     verbosity: i32,
@@ -21,15 +20,43 @@ impl StalmarckSolver {
     }
 
     /// Solve from a file path
-    pub fn solve_from_file(&mut self, _filename: &str) -> Result<bool> {
-        // Placeholder for actual implementation
-        Ok(false)
+    pub fn solve_from_file(&mut self, filename: &str) -> Result<bool> {
+        // Parse the DIMACS file
+        let mut formula = self.parser.parse_dimacs(filename)?;
+
+        if self.verbosity > 0 {
+            println!(
+                "Parsed formula with {} variables and {} clauses",
+                formula.num_variables(),
+                formula.num_clauses()
+            );
+        }
+
+        // Solve the formula
+        self.solve(&mut formula)
     }
 
     /// Solve from a formula
-    pub fn solve(&mut self, _formula: &Formula) -> Result<bool> {
-        // Placeholder for actual implementation
-        Ok(false)
+    pub fn solve(&mut self, formula: &mut Formula) -> Result<bool> {
+        if self.verbosity > 0 {
+            println!("Starting the Stalmarck Procedure");
+        }
+
+        // Use the solver to determine if -F is a tautology
+        let is_negated_tautology = self.solver.solve(&mut formula.clone());
+
+        // Store the result
+        self.is_tautology_result = is_negated_tautology;
+
+        if self.verbosity > 0 {
+            println!(
+                "Negated formula is{} a tautology",
+                if is_negated_tautology { "" } else { " not" }
+            );
+        }
+
+        // Return true if the original formula is satisfiable
+        Ok(!is_negated_tautology)
     }
 
     /// Check if the formula is a tautology

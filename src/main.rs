@@ -34,19 +34,12 @@ fn main() -> Result<()> {
 
     // Solve the formula
     match solver.solve_from_file(&args.file_path) {
-        Ok(_) => {
+        Ok(is_satisfiable) => {
             // Print the result
-            println!(
-                "{}",
-                if solver.is_tautology() {
-                    "SAT"
-                } else {
-                    "UNSAT"
-                }
-            );
+            println!("{}", if is_satisfiable { "SAT" } else { "UNSAT" });
 
             // Return standard SAT solver exit codes
-            if solver.is_tautology() {
+            if is_satisfiable {
                 std::process::exit(10);
             } else {
                 std::process::exit(20);
