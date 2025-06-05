@@ -64,15 +64,7 @@ impl Solver {
         }
 
         // Main solving loop with branching
-        let mut iteration = 0;
-        let max_iterations = formula.num_variables() * 2 + 10;
-
         while !self.has_complete_assignment_flag && !self.has_contradiction_flag {
-            iteration += 1;
-            if iteration > max_iterations {
-                break;
-            }
-
             // Save state before branching to detect if progress was made
             let assignments_before_branch = self.assignments.clone();
             let contradiction_before_branch = self.has_contradiction_flag;
@@ -84,6 +76,7 @@ impl Solver {
             if self.has_contradiction_flag {
                 break;
             }
+
             if self.has_complete_assignment_flag {
                 break;
             }
@@ -108,10 +101,14 @@ impl Solver {
                     if self.check_all_original_variables_assigned(formula) {
                         self.has_complete_assignment_flag = true;
                         break;
+                    } else {
+                        // No progress and no contradiction implies satisfiable
+                        self.has_complete_assignment_flag = true;
+                        break;
                     }
                 }
             } else {
-                // Branching made progress, apply rules to propagate changes
+                // Branching made progress (or flags changed), apply rules to propagate changes
                 self.apply_simple_rules();
             }
 
@@ -123,6 +120,11 @@ impl Solver {
                 self.has_complete_assignment_flag = true;
                 break;
             }
+        }
+
+        // If no contradiction, mark as satisfiable (complete assignment)
+        if !self.has_contradiction_flag {
+            self.has_complete_assignment_flag = true;
         }
 
         self.has_contradiction_flag
@@ -437,8 +439,16 @@ impl Solver {
             // False branch contradicts - commit to true branch
             self.assignments = assignments_after_true;
         } else {
-            // Neither branch contradicts - choose true branch
-            self.assignments = assignments_after_true;
+            // Neither branch contradicts - take the intersection of assignments
+            let mut intersection_assignments = HashMap::new();
+            for (var_id_s1, val_s1) in assignments_after_true.iter() {
+                if let Some(val_s2) = assignments_after_false.get(var_id_s1) {
+                    if val_s1 == val_s2 {
+                        intersection_assignments.insert(*var_id_s1, *val_s1);
+                    }
+                }
+            }
+            self.assignments = intersection_assignments;
         }
     }
 
