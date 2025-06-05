@@ -1,0 +1,11 @@
+c This is an unsatisfiable 3-SAT CNF
+c Based on enumerating all possible truth assignments for 3 variables
+p cnf 3 8
+1 2 3 0
+1 2 -3 0
+1 -2 3 0
+1 -2 -3 0
+-1 2 3 0
+-1 2 -3 0
+-1 -2 3 0
+-1 -2 -3 0

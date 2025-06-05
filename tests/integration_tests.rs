@@ -16,6 +16,11 @@ const TEST_CASES: &[TestCase] = &[
         description: "Single positive literal",
     },
     TestCase {
+        filename: "trivial_unsat.cnf",
+        expected_result: "UNSAT",
+        description: "Single negative literal",
+    },
+    TestCase {
         filename: "simple_sat.cnf",
         expected_result: "SAT",
         description: "Simple satisfiable formula",
@@ -24,6 +29,16 @@ const TEST_CASES: &[TestCase] = &[
         filename: "simple_unsat.cnf",
         expected_result: "UNSAT",
         description: "Simple unsatisfiable formula",
+    },
+    TestCase {
+        filename: "3sat_sat.cnf",
+        expected_result: "SAT",
+        description: "3-SAT satisfiable formula",
+    },
+    TestCase {
+        filename: "3sat_unsat.cnf",
+        expected_result: "UNSAT",
+        description: "3-SAT unsatisfiable formula",
     },
 ];
 
