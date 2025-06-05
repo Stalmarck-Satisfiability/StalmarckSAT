@@ -59,7 +59,7 @@ impl Solver {
 
         // Start the recursive search
         let result = self.solve_recursive(formula, 0);
-        
+
         result
     }
 
@@ -67,7 +67,7 @@ impl Solver {
     fn solve_recursive(&mut self, formula: &Formula, depth: usize) -> bool {
         // Apply simple rules (0-saturation)
         self.apply_simple_rules();
-        
+
         if self.has_contradiction_flag {
             return true;
         }
@@ -81,7 +81,7 @@ impl Solver {
         if let Some(v_id) = self.find_unassigned_variable() {
             // Save current state
             let saved_state = self.save_state();
-            
+
             // Branch 1: v_id = true
             self.assign_value(&TripletVar::Var(v_id), true);
             let unsat_on_true = if self.has_contradiction_flag {
@@ -89,10 +89,10 @@ impl Solver {
             } else {
                 self.solve_recursive(formula, depth + 1)
             };
-            
+
             // Restore state for second branch
             self.restore_state(&saved_state);
-            
+
             // Branch 2: v_id = false
             self.assign_value(&TripletVar::Var(v_id), false);
             let unsat_on_false = if self.has_contradiction_flag {
@@ -103,7 +103,7 @@ impl Solver {
 
             // Restore original state
             self.restore_state(&saved_state);
-            
+
             // Apply dilemma rule
             if unsat_on_true && unsat_on_false {
                 self.has_contradiction_flag = true;
@@ -118,8 +118,9 @@ impl Solver {
                 // Commit to satisfying model (pick first branch)
                 self.assign_value(&TripletVar::Var(v_id), true);
                 // Re-run rules for bridge variable consistency
-                self.apply_simple_rules(); 
-                self.has_complete_assignment_flag = self.check_all_original_variables_assigned(formula);
+                self.apply_simple_rules();
+                self.has_complete_assignment_flag =
+                    self.check_all_original_variables_assigned(formula);
                 return false; // Return SAT
             }
         } else {
@@ -182,8 +183,7 @@ impl Solver {
                     self.has_contradiction_flag = false;
                     self.has_complete_assignment_flag = true;
                 }
-                _ => {
-                }
+                _ => {}
             }
         } else {
             if formula.get_clauses().is_empty() && formula.num_variables() == 0 {
@@ -249,7 +249,7 @@ impl Solver {
 
             for (_trip_a, _trip_b, _trip_c) in triplets_to_process.iter() {
                 let _initial_assignments_snapshot = self.assignments.clone();
-                
+
                 // Rule 1: (0, y, z) => y=1, z=0
                 if let Some(false) = self.get_triplet_var_value(_trip_a) {
                     if self.has_contradiction_flag {
