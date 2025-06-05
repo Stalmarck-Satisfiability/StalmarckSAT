@@ -1,0 +1,5 @@
+c Simple unsatisfiable formula: (x1) AND (NOT x1)
+c Expected: UNSAT
+p cnf 1 2
+1 0
+-1 0

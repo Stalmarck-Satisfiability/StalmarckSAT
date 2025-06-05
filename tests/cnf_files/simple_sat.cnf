@@ -1,0 +1,5 @@
+c Simple satisfiable formula: (x1 OR x2) AND (NOT x1 OR x2)
+c Expected: SAT
+p cnf 2 2
+1 2 0
+-1 2 0

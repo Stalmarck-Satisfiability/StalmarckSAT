@@ -1,4 +1,3 @@
-// Formula implementation for Stalmarck's algorithm
 use std::collections::HashMap;
 
 /// Represents a formula in propositional logic
