@@ -11,6 +11,14 @@ pub struct Solver {
     current_num_variables: usize,
 }
 
+/// Helper struct to save/restore solver state
+#[derive(Debug, Clone)]
+struct SolverState {
+    assignments: HashMap<i32, bool>,
+    has_contradiction_flag: bool,
+    has_complete_assignment_flag: bool,
+}
+
 impl Solver {
     /// Create a new solver instance
     pub fn new() -> Self {
@@ -22,7 +30,7 @@ impl Solver {
         self.current_num_variables = num_vars;
     }
 
-    /// Solve a formula. Returns `true` if UNSATISFIABLE, `false` if SATISFIABLE.
+    /// Solving loop
     pub fn solve(&mut self, formula: &mut Formula) -> bool {
         self.reset();
         formula.translate_to_implication_form();
@@ -39,7 +47,6 @@ impl Solver {
                 }
             } else {
                 if !self.current_triplets.is_empty() {
-                    eprintln!("Error: Triplets exist but no root variable found in TripletFormula. Cannot reliably solve.");
                     return false;
                 }
                 return self.handle_trivial_formula(formula);
@@ -50,84 +57,119 @@ impl Solver {
 
         self.current_num_variables = formula.num_variables();
 
-        // Apply initial propagation rules after asserting the root variable
-        self.apply_simple_rules();
+        // Start the recursive search
+        let result = self.solve_recursive(formula, 0);
+        
+        result
+    }
 
+    /// Recursive solver
+    fn solve_recursive(&mut self, formula: &Formula, depth: usize) -> bool {
+        // Apply simple rules (0-saturation)
+        self.apply_simple_rules();
+        
         if self.has_contradiction_flag {
             return true;
         }
 
-        // Check if initial rules were sufficient to assign all variables
+        // Check if all original variables are assigned
         if self.check_all_original_variables_assigned(formula) {
-            self.has_complete_assignment_flag = true;
             return false;
         }
 
-        // Main solving loop with branching
-        while !self.has_complete_assignment_flag && !self.has_contradiction_flag {
-            // Save state before branching to detect if progress was made
-            let assignments_before_branch = self.assignments.clone();
-            let contradiction_before_branch = self.has_contradiction_flag;
-            let complete_before_branch = self.has_complete_assignment_flag;
-
-            // Attempt to make progress through branching
-            self.branch_and_solve(formula);
-
-            if self.has_contradiction_flag {
-                break;
-            }
-
-            if self.has_complete_assignment_flag {
-                break;
-            }
-
-            // Check if branching made progress
-            if self.assignments == assignments_before_branch
-                && self.has_contradiction_flag == contradiction_before_branch
-                && self.has_complete_assignment_flag == complete_before_branch
-            {
-                // If no progress from branching, try applying rules again
-                let mut made_change_by_rules = false;
-                let assignments_before_rules = self.assignments.clone();
-
-                self.apply_simple_rules();
-
-                if self.assignments != assignments_before_rules {
-                    made_change_by_rules = true;
-                }
-
-                // If no progress from rules either, check for completion
-                if !made_change_by_rules && !self.has_contradiction_flag {
-                    if self.check_all_original_variables_assigned(formula) {
-                        self.has_complete_assignment_flag = true;
-                        break;
-                    } else {
-                        // No progress and no contradiction implies satisfiable
-                        self.has_complete_assignment_flag = true;
-                        break;
-                    }
-                }
+        // Find a variable to branch on
+        if let Some(v_id) = self.find_unassigned_variable() {
+            // Save current state
+            let saved_state = self.save_state();
+            
+            // Branch 1: v_id = true
+            self.assign_value(&TripletVar::Var(v_id), true);
+            let unsat_on_true = if self.has_contradiction_flag {
+                true
             } else {
-                // Branching made progress (or flags changed), apply rules to propagate changes
-                self.apply_simple_rules();
-            }
+                self.solve_recursive(formula, depth + 1)
+            };
+            
+            // Restore state for second branch
+            self.restore_state(&saved_state);
+            
+            // Branch 2: v_id = false
+            self.assign_value(&TripletVar::Var(v_id), false);
+            let unsat_on_false = if self.has_contradiction_flag {
+                true
+            } else {
+                self.solve_recursive(formula, depth + 1)
+            };
 
-            if self.has_contradiction_flag {
-                break;
+            // Restore original state
+            self.restore_state(&saved_state);
+            
+            // Apply dilemma rule
+            if unsat_on_true && unsat_on_false {
+                self.has_contradiction_flag = true;
+                return true;
+            } else if unsat_on_true {
+                self.assign_value(&TripletVar::Var(v_id), false);
+                return self.solve_recursive(formula, depth + 1);
+            } else if unsat_on_false {
+                self.assign_value(&TripletVar::Var(v_id), true);
+                return self.solve_recursive(formula, depth + 1);
+            } else {
+                // Commit to satisfying model (pick first branch)
+                self.assign_value(&TripletVar::Var(v_id), true);
+                // Re-run rules for bridge variable consistency
+                self.apply_simple_rules(); 
+                self.has_complete_assignment_flag = self.check_all_original_variables_assigned(formula);
+                return false; // Return SAT
             }
-            // Final check for completion after rule application
-            if self.check_all_original_variables_assigned(formula) && !self.has_contradiction_flag {
-                self.has_complete_assignment_flag = true;
-                break;
+        } else {
+            return false;
+        }
+    }
+
+    /// Find an unassigned variable to branch on
+    fn find_unassigned_variable(&self) -> Option<i32> {
+        // Strategy 1: Prioritize original variables first
+        for i in 1..=self.current_num_variables {
+            let var_id = i as i32;
+            if !self.assignments.contains_key(&var_id) {
+                return Some(var_id);
             }
         }
 
-        // If no contradiction, mark as satisfiable (complete assignment)
-        if !self.has_contradiction_flag {
-            self.has_complete_assignment_flag = true;
+        // Strategy 2: Check bridge variables in triplets
+        let mut vars_in_triplets = std::collections::HashSet::new();
+        for (ta, tb, tc) in &self.current_triplets {
+            for tv_ref in [ta, tb, tc] {
+                if let TripletVar::Var(id) = tv_ref {
+                    vars_in_triplets.insert(*id);
+                }
+            }
         }
 
-        self.has_contradiction_flag
+        for var_id in vars_in_triplets {
+            if !self.assignments.contains_key(&var_id) {
+                return Some(var_id);
+            }
+        }
+
+        None
+    }
+
+    /// Save the current solver state
+    fn save_state(&self) -> SolverState {
+        SolverState {
+            assignments: self.assignments.clone(),
+            has_contradiction_flag: self.has_contradiction_flag,
+            has_complete_assignment_flag: self.has_complete_assignment_flag,
+        }
+    }
+
+    /// Restore a previously saved solver state
+    fn restore_state(&mut self, state: &SolverState) {
+        self.assignments = state.assignments.clone();
+        self.has_contradiction_flag = state.has_contradiction_flag;
+        self.has_complete_assignment_flag = state.has_complete_assignment_flag;
     }
 
     fn handle_trivial_formula(&mut self, formula: &Formula) -> bool {
@@ -140,7 +182,8 @@ impl Solver {
                     self.has_contradiction_flag = false;
                     self.has_complete_assignment_flag = true;
                 }
-                _ => {}
+                _ => {
+                }
             }
         } else {
             if formula.get_clauses().is_empty() && formula.num_variables() == 0 {
@@ -153,8 +196,7 @@ impl Solver {
     /// Checks if all original variables (not bridge variables) have an assignment.
     /// Returns true if the formula is completely solved for all original variables.
     fn check_all_original_variables_assigned(&self, _formula: &Formula) -> bool {
-        // Special case: formula with no original variables but has bridge variables
-        // This can happen with formulas like `Var(1000) -> Var(1000)` that are tautologies
+        // Special case: formula with no original variables but has bridge variables (e.g., tautologies)
         if self.current_num_variables == 0
             && self.assignments.is_empty()
             && !self.current_triplets.is_empty()
@@ -184,14 +226,14 @@ impl Solver {
         // Check all original variables (numbered 1 to current_num_variables)
         for i in 1..=self.current_num_variables {
             if !self.assignments.contains_key(&(i as i32)) {
-                // Also check for negative literal representation (if used)
+                // Also check for negative literal representation
                 if !self.assignments.contains_key(&(-(i as i32))) {
                     return false;
                 }
             }
         }
 
-        // If we have original variables and reached here, all are assigned
+        // Original variables are assigned if we reach here
         if self.current_num_variables > 0 {
             return true;
         }
@@ -200,105 +242,98 @@ impl Solver {
 
     /// Apply simple rules to the formula
     pub fn apply_simple_rules(&mut self) {
-        let mut rule_pass = 0;
-        let max_rule_passes = self.current_triplets.len() + 5;
-
         loop {
-            rule_pass += 1;
-            if rule_pass > max_rule_passes {
-                break;
-            }
             let mut made_change_in_pass = false;
 
             let triplets_to_process = self.current_triplets.clone();
 
-            for (_i, (trip_a, trip_b, trip_c)) in triplets_to_process.iter().enumerate() {
+            for (_trip_a, _trip_b, _trip_c) in triplets_to_process.iter() {
                 let _initial_assignments_snapshot = self.assignments.clone();
-
+                
                 // Rule 1: (0, y, z) => y=1, z=0
-                if let Some(false) = self.get_triplet_var_value(trip_a) {
+                if let Some(false) = self.get_triplet_var_value(_trip_a) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(trip_b, true) {
+                    if self.assign_value(_trip_b, true) {
                         made_change_in_pass = true;
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(trip_c, false) {
+                    if self.assign_value(_trip_c, false) {
                         made_change_in_pass = true;
                     }
                 }
                 // Rule 2: (x, y, 1) => x=1
-                else if let Some(true) = self.get_triplet_var_value(trip_c) {
+                else if let Some(true) = self.get_triplet_var_value(_trip_c) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(trip_a, true) {
+                    if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
                     }
                 }
                 // Rule 3: (x, 0, z) => x=1
-                else if let Some(false) = self.get_triplet_var_value(trip_b) {
+                else if let Some(false) = self.get_triplet_var_value(_trip_b) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(trip_a, true) {
+                    if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
                     }
                 }
                 // Rule 4: (x, 1, z) => x=z
-                else if let Some(true) = self.get_triplet_var_value(trip_b) {
+                else if let Some(true) = self.get_triplet_var_value(_trip_b) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if let Some(val_c) = self.get_triplet_var_value(trip_c) {
-                        if self.assign_value(trip_a, val_c) {
+                    if let Some(val_c) = self.get_triplet_var_value(_trip_c) {
+                        if self.assign_value(_trip_a, val_c) {
                             made_change_in_pass = true;
                         }
-                    } else if let Some(val_a) = self.get_triplet_var_value(trip_a) {
-                        if self.assign_value(trip_c, val_a) {
+                    } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
+                        if self.assign_value(_trip_c, val_a) {
                             made_change_in_pass = true;
                         }
                     }
                 }
                 // Rule 5: (x, y, 0) => x=-y
-                else if let Some(false) = self.get_triplet_var_value(trip_c) {
+                else if let Some(false) = self.get_triplet_var_value(_trip_c) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if let Some(val_b) = self.get_triplet_var_value(trip_b) {
-                        if self.assign_value(trip_a, !val_b) {
+                    if let Some(val_b) = self.get_triplet_var_value(_trip_b) {
+                        if self.assign_value(_trip_a, !val_b) {
                             made_change_in_pass = true;
                         }
-                    } else if let Some(val_a) = self.get_triplet_var_value(trip_a) {
-                        if self.assign_value(trip_b, !val_a) {
+                    } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
+                        if self.assign_value(_trip_b, !val_a) {
                             made_change_in_pass = true;
                         }
                     }
                 }
                 // Rule 6: (x, x, z) => x=1, z=1
-                else if trip_a == trip_b {
+                else if _trip_a == _trip_b {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(trip_a, true) {
+                    if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(trip_c, true) {
+                    if self.assign_value(_trip_c, true) {
                         made_change_in_pass = true;
                     }
                 }
                 // Rule 7: (x, y, y) => x=1
-                else if trip_b == trip_c {
+                else if _trip_b == _trip_c {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(trip_a, true) {
+                    if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
                     }
                 }
@@ -317,25 +352,25 @@ impl Solver {
     /// Helper function to propagate an assignment
     fn assign_value(&mut self, tv: &TripletVar, value: bool) -> bool {
         match tv {
-            // If the variable is already assigned, check for contradiction
+            // Check for contradiction if already assigned
             TripletVar::Var(id) => {
                 if let Some(&current_value) = self.assignments.get(id) {
-                    // If the current value contradicts the new value, set contradiction flag
+                    // Set contradiction flag if values differ
                     if current_value != value {
                         self.has_contradiction_flag = true;
                         return false;
                     }
                     return false;
                 } else {
-                    // If not assigned, insert the new value
+                    // Insert new value if not assigned
                     self.assignments.insert(*id, value);
                     return true;
                 }
             }
-            // If the variable is a constant, check for contradiction
+            // Check for contradiction with constant
             TripletVar::Const(const_val) => {
                 if *const_val != value {
-                    // If the constant value contradicts the new value, set contradiction flag
+                    // Set contradiction flag if constant differs
                     self.has_contradiction_flag = true;
                     return false;
                 }
@@ -351,9 +386,7 @@ impl Solver {
             TripletVar::Var(id) => self.assignments.get(id).cloned(),
         }
     }
-    /// Branch on a variable with the dilemma rule and attempt to solve
-    /// This implements Stålmarck's dilemma rule by trying both truth values
-    /// for an unassigned variable and taking the intersection of valid assignments
+    /// Branch on a variable with the dilemma rule - implements Stålmarck's dilemma rule by trying both truth values
     pub fn branch_and_solve(&mut self, formula: &Formula) {
         let mut unassigned_var_id_opt: Option<i32> = None;
 
