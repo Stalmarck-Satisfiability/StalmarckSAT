@@ -1,0 +1,14 @@
+[package]
+name = "pystalmarck"
+version = "0.1.0"
+edition = "2021"
+authors = ["Liam Davis", "Sergei Leonov"]
+description = "Python bindings for StalmarckSAT"
+
+[lib]
+name = "pystalmarck"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+stalmarck_sat = { path = "..", package = "StalmarckSAT" }
