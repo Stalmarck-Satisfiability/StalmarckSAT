@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "python-bindings"]
+
 [package]
 name = "StalmarckSAT"
 version = "0.1.0"
