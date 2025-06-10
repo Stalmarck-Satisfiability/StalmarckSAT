@@ -24,36 +24,20 @@ impl StalmarckSolver {
         // Parse the DIMACS file
         let mut formula = self.parser.parse_dimacs(filename)?;
 
-        if self.verbosity > 0 {
-            println!(
-                "Parsed formula with {} variables and {} clauses",
-                formula.num_variables(),
-                formula.num_clauses()
-            );
-        }
-
         // Solve the formula
         self.solve(&mut formula)
     }
 
     /// Solve from a formula
     pub fn solve(&mut self, formula: &mut Formula) -> Result<bool> {
-        if self.verbosity > 0 {
-            println!("Starting the Stalmarck Procedure");
-        }
+        // Set verbosity in the solver
+        self.solver.set_verbosity(self.verbosity);
 
         // Use the solver to determine if -F is a tautology
         let is_negated_tautology = self.solver.solve(&mut formula.clone());
 
         // Store the result
         self.is_tautology_result = is_negated_tautology;
-
-        if self.verbosity > 0 {
-            println!(
-                "Negated formula is{} a tautology",
-                if is_negated_tautology { "" } else { " not" }
-            );
-        }
 
         // Return true if the original formula is satisfiable
         Ok(!is_negated_tautology)

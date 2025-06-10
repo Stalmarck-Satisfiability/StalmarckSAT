@@ -64,7 +64,7 @@ fn run_solver_on_file(cnf_file: &str) -> (String, i32) {
     let cnf_path = format!("tests/cnf_files/{}", cnf_file);
 
     let output = Command::new(binary_path)
-        .arg(&cnf_path)
+        .args(&["--verbosity", "0", &cnf_path])
         .output()
         .expect("Failed to execute solver");
 
