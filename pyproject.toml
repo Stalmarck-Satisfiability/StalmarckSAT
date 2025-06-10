@@ -10,7 +10,7 @@ authors = [
     {name = "Sergei Leonov"},
 ]
 description = "Python bindings for StalmarckSAT - A SAT solver based on Stålmarck's method"
-readme = "README.md"
+readme = "python/README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 3 - Alpha",
