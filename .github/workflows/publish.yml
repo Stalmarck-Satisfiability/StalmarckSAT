@@ -21,10 +21,8 @@ jobs:
             target: x64
           - os: macos-latest
             target: x86_64
-            PYO3_COMPATIBILITY_ENV: PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 # Added for Python 3.13+
           - os: macos-latest
             target: aarch64
-            PYO3_COMPATIBILITY_ENV: PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 # Added for Python 3.13+
 
     steps:
     - uses: actions/checkout@v4
@@ -35,7 +33,7 @@ jobs:
     - name: Build wheels
       uses: PyO3/maturin-action@v1
       env:
-        ${{ matrix.PYO3_COMPATIBILITY_ENV }} # Set env var for macOS PyO3 compatibility
+        PYO3_USE_ABI3_FORWARD_COMPATIBILITY: ${{ runner.os == 'macOS' && '1' || '' }}
       with:
         target: ${{ matrix.target }}
         args: --release --out dist --find-interpreter
