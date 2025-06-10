@@ -40,6 +40,16 @@ const TEST_CASES: &[TestCase] = &[
         expected_result: "UNSAT",
         description: "3-SAT unsatisfiable formula",
     },
+    TestCase {
+        filename: "3color_sat.cnf",
+        expected_result: "SAT",
+        description: "3-graph coloring satisfiable formula",
+    },
+    TestCase {
+        filename: "3color_unsat.cnf",
+        expected_result: "UNSAT",
+        description: "3-graph coloring unsatisfiable formula",
+    },
 ];
 
 /// Helper function to build the solver binary
