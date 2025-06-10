@@ -3,19 +3,6 @@
 version = 4
 
 [[package]]
-name = "StalmarckSAT"
-version = "0.1.0"
-dependencies = [
- "clap",
- "criterion",
- "env_logger",
- "log",
- "rstest",
- "tempfile",
- "thiserror",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -655,8 +642,8 @@ dependencies = [
 name = "pystalmarck"
 version = "0.1.0"
 dependencies = [
- "StalmarckSAT",
  "pyo3",
+ "stalmarck-sat",
 ]
 
 [[package]]
@@ -846,6 +833,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "stalmarck-sat"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "criterion",
+ "env_logger",
+ "log",
+ "rstest",
+ "tempfile",
+ "thiserror",
 ]
 
 [[package]]

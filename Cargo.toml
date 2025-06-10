@@ -2,14 +2,16 @@
 members = [".", "python-bindings"]
 
 [package]
-name = "StalmarckSAT"
+name = "stalmarck-sat"
 version = "0.1.0"
 edition = "2021"
 authors = ["Liam Davis", "Sergei Leonov"]
-description = "Rust implementation of Stålmarck's method for SAT solving"
+description = "Rust-based SAT Solver based on the Stålmarck Procedure"
 repository = "https://github.com/Stalmarck-Satisfiability/StalmarckSAT"
 license = "MIT"
 readme = "README.md"
+keywords = ["sat", "solver", "stalmarck", "logic", "satisfiability"]
+categories = ["algorithms", "science"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }  # For command-line argument parsing
