@@ -78,6 +78,7 @@ impl PyStalmarckSolver {
 /// Raises:
 ///     RuntimeError: If there's an error parsing or solving the file
 #[pyfunction]
+#[pyo3(signature = (file_path, verbosity=None, timeout=None))]
 fn solve_cnf_file(file_path: &str, verbosity: Option<i32>, timeout: Option<f64>) -> PyResult<bool> {
     let mut solver = StalmarckSolver::new();
 
@@ -97,7 +98,7 @@ fn solve_cnf_file(file_path: &str, verbosity: Option<i32>, timeout: Option<f64>)
 
 /// Python module for StalmarckSAT
 #[pymodule]
-fn pystalmarck(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pystalmarck(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyStalmarckSolver>()?;
     m.add_function(wrap_pyfunction!(solve_cnf_file, m)?)?;
 
