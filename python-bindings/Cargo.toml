@@ -11,4 +11,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.25", features = ["extension-module"] }
-stalmarck_sat = { path = "..", package = "StalmarckSAT" }
+stalmarck-sat = { path = ".." }
