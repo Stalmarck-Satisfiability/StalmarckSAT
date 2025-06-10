@@ -12,7 +12,7 @@ struct Args {
     file_path: String,
 
     /// Verbosity level (0-2)
-    #[arg(short, long, default_value_t = 0)]
+    #[arg(short, long, default_value_t = 1)]
     verbosity: i32,
 
     /// Timeout in seconds

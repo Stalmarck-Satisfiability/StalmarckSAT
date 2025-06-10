@@ -1,4 +1,5 @@
 use crate::core::formula::{Formula, ImplicationFormula, TripletVar};
+use crate::solver::statistics::SolverStatistics;
 use std::collections::HashMap;
 
 /// Core solver for Stalmarck's method
@@ -9,6 +10,8 @@ pub struct Solver {
     has_complete_assignment_flag: bool,
     pub(crate) current_triplets: Vec<(TripletVar, TripletVar, TripletVar)>,
     current_num_variables: usize,
+    pub statistics: SolverStatistics,
+    verbosity: i32,
 }
 
 /// Helper struct to save/restore solver state
@@ -30,9 +33,17 @@ impl Solver {
         self.current_num_variables = num_vars;
     }
 
+    /// Set the verbosity level
+    pub fn set_verbosity(&mut self, level: i32) {
+        self.verbosity = level;
+    }
+
     /// Solving loop
     pub fn solve(&mut self, formula: &mut Formula) -> bool {
         self.reset();
+        self.statistics.reset();
+
+        // Translate to triplets
         formula.translate_to_implication_form();
         formula.encode_formula_to_triplets();
 
@@ -43,28 +54,47 @@ impl Solver {
                 self.assign_value(root_var, true);
 
                 if self.has_contradiction_flag {
+                    self.statistics.print_summary(self.verbosity);
                     return true;
                 }
             } else {
                 if !self.current_triplets.is_empty() {
+                    self.statistics.print_summary(self.verbosity);
                     return false;
                 }
-                return self.handle_trivial_formula(formula);
+                let result = self.handle_trivial_formula(formula);
+                self.statistics.print_summary(self.verbosity);
+                return result;
             }
         } else {
-            return self.handle_trivial_formula(formula);
+            let result = self.handle_trivial_formula(formula);
+            self.statistics.print_summary(self.verbosity);
+            return result;
         }
 
         self.current_num_variables = formula.num_variables();
 
-        // Start the recursive search
-        let result = self.solve_recursive(formula, 0);
+        // Count the initial problem as the first subproblem
+        self.statistics.increment_subproblems_explored();
 
+        // Start the recursive search
+        let result = self.solve_recursive(formula, 1);
+
+        self.statistics.print_summary(self.verbosity);
         result
     }
 
     /// Recursive solver
     fn solve_recursive(&mut self, formula: &Formula, depth: usize) -> bool {
+        // Track statistics - each recursive call represents an iteration
+        self.statistics.increment_recursive_calls();
+        self.statistics.update_max_depth(depth);
+
+        // Print progress if verbosity is enabled
+        if self.verbosity >= 1 {
+            self.statistics.print_progress(depth, self.verbosity);
+        }
+
         // Apply simple rules (0-saturation)
         self.apply_simple_rules();
 
@@ -82,7 +112,8 @@ impl Solver {
             // Save current state
             let saved_state = self.save_state();
 
-            // Branch 1: v_id = true
+            // Branch 1: v_id = true - increment subproblems when exploring this branch
+            self.statistics.increment_subproblems_explored();
             self.assign_value(&TripletVar::Var(v_id), true);
             let unsat_on_true = if self.has_contradiction_flag {
                 true
@@ -93,7 +124,8 @@ impl Solver {
             // Restore state for second branch
             self.restore_state(&saved_state);
 
-            // Branch 2: v_id = false
+            // Branch 2: v_id = false - increment subproblems when exploring this branch
+            self.statistics.increment_subproblems_explored();
             self.assign_value(&TripletVar::Var(v_id), false);
             let unsat_on_false = if self.has_contradiction_flag {
                 true
@@ -104,7 +136,9 @@ impl Solver {
             // Restore original state
             self.restore_state(&saved_state);
 
-            // Apply dilemma rule
+            // Apply dilemma rule - increment when rule is applied
+            self.statistics.increment_dilemma_rule_applications();
+
             if unsat_on_true && unsat_on_false {
                 self.has_contradiction_flag = true;
                 return true;
@@ -257,12 +291,14 @@ impl Solver {
                     }
                     if self.assign_value(_trip_b, true) {
                         made_change_in_pass = true;
+                        self.statistics.increment_simple_rule_applications();
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
                     if self.assign_value(_trip_c, false) {
                         made_change_in_pass = true;
+                        self.statistics.increment_simple_rule_applications();
                     }
                 }
                 // Rule 2: (x, y, 1) => x=1
@@ -272,6 +308,7 @@ impl Solver {
                     }
                     if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
+                        self.statistics.increment_simple_rule_applications();
                     }
                 }
                 // Rule 3: (x, 0, z) => x=1
@@ -281,6 +318,7 @@ impl Solver {
                     }
                     if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
+                        self.statistics.increment_simple_rule_applications();
                     }
                 }
                 // Rule 4: (x, 1, z) => x=z
@@ -291,10 +329,12 @@ impl Solver {
                     if let Some(val_c) = self.get_triplet_var_value(_trip_c) {
                         if self.assign_value(_trip_a, val_c) {
                             made_change_in_pass = true;
+                            self.statistics.increment_simple_rule_applications();
                         }
                     } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
                         if self.assign_value(_trip_c, val_a) {
                             made_change_in_pass = true;
+                            self.statistics.increment_simple_rule_applications();
                         }
                     }
                 }
@@ -306,10 +346,12 @@ impl Solver {
                     if let Some(val_b) = self.get_triplet_var_value(_trip_b) {
                         if self.assign_value(_trip_a, !val_b) {
                             made_change_in_pass = true;
+                            self.statistics.increment_simple_rule_applications();
                         }
                     } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
                         if self.assign_value(_trip_b, !val_a) {
                             made_change_in_pass = true;
+                            self.statistics.increment_simple_rule_applications();
                         }
                     }
                 }
@@ -320,12 +362,14 @@ impl Solver {
                     }
                     if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
+                        self.statistics.increment_simple_rule_applications();
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
                     if self.assign_value(_trip_c, true) {
                         made_change_in_pass = true;
+                        self.statistics.increment_simple_rule_applications();
                     }
                 }
                 // Rule 7: (x, y, y) => x=1
@@ -335,6 +379,7 @@ impl Solver {
                     }
                     if self.assign_value(_trip_a, true) {
                         made_change_in_pass = true;
+                        self.statistics.increment_simple_rule_applications();
                     }
                 }
 
@@ -502,5 +547,6 @@ impl Solver {
         self.has_complete_assignment_flag = false;
         self.current_triplets.clear();
         self.current_num_variables = 0;
+        self.statistics.reset();
     }
 }
