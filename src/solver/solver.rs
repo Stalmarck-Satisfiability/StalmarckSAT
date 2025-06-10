@@ -112,6 +112,9 @@ impl Solver {
             // Save current state
             let saved_state = self.save_state();
 
+            // Increment dilemma rule applications
+            self.statistics.increment_dilemma_rule_applications();
+
             // Branch 1: v_id = true - increment subproblems when exploring this branch
             self.statistics.increment_subproblems_explored();
             self.assign_value(&TripletVar::Var(v_id), true);
@@ -135,9 +138,6 @@ impl Solver {
 
             // Restore original state
             self.restore_state(&saved_state);
-
-            // Apply dilemma rule - increment when rule is applied
-            self.statistics.increment_dilemma_rule_applications();
 
             if unsat_on_true && unsat_on_false {
                 self.has_contradiction_flag = true;

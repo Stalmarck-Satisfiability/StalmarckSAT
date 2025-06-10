@@ -1,0 +1,35 @@
+c 3-Coloring of a Triangle Graph (Vertices 1, 2, 3; Edges (1,2), (2,3), (3,1))
+p cnf 9 21
+
+c --- Vertex 1 Must have exactly one color ---
+1 2 3 0
+-1 -2 0
+-1 -3 0
+-2 -3 0
+
+c --- Vertex 2 Must have exactly one color ---
+4 5 6 0
+-4 -5 0
+-4 -6 0
+-5 -6 0
+
+c --- Vertex 3 Must have exactly one color ---
+7 8 9 0
+-7 -8 0
+-7 -9 0
+-8 -9 0
+
+c --- Edge (1,2) Must have different colors ---
+-1 -4 0
+-2 -5 0
+-3 -6 0
+
+c --- Edge (2,3) Must have different colors ---
+-4 -7 0
+-5 -8 0
+-6 -9 0
+
+c --- Edge (3,1) Must have different colors ---
+-7 -1 0
+-8 -2 0
+-9 -3 0
