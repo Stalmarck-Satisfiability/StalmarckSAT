@@ -48,7 +48,7 @@ impl SolverStatistics {
 
     /// Print progress information with specified verbosity level
     pub fn print_progress(&self, _depth: usize, verbosity: i32) {
-        if verbosity >= 1 {
+        if verbosity >= 2 {
             println!("Iteration number: {}", self.recursive_calls);
             println!(
                 "Simple Rule Applications: {}, Dilemma Rule Applications: {}, Subproblems Explored: {}\n",

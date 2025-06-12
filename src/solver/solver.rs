@@ -121,6 +121,7 @@ impl Solver {
             let unsat_on_true = if self.has_contradiction_flag {
                 true
             } else {
+                self.statistics.increment_subproblems_explored();
                 self.solve_recursive(formula, depth + 1)
             };
 
@@ -133,6 +134,7 @@ impl Solver {
             let unsat_on_false = if self.has_contradiction_flag {
                 true
             } else {
+                self.statistics.increment_subproblems_explored();
                 self.solve_recursive(formula, depth + 1)
             };
 
