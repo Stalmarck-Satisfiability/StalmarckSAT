@@ -277,7 +277,7 @@ impl Solver {
     }
 
     /// Apply simple rules to the formula
-    pub fn apply_simple_rules(&mut self){
+    pub fn apply_simple_rules(&mut self) {
         loop {
             let mut made_change_in_pass = false;
 
@@ -285,14 +285,14 @@ impl Solver {
 
             let order_of_rules: [u32; 7] = [6, 1, 3, 2, 7, 4, 5]; // Current order: number of vars assigned priority
 
-            for rule_num in order_of_rules.iter(){
-
+            for rule_num in order_of_rules.iter() {
                 for (_trip_a, _trip_b, _trip_c) in triplets_to_process.iter() {
                     let _initial_assignments_snapshot = self.assignments.clone();
 
-                    match rule_num{
+                    match rule_num {
                         // Rule 1: (0, y, z) => y=1, z=0
-                        1 => if let Some(false) = self.get_triplet_var_value(_trip_a) {
+                        1 => {
+                            if let Some(false) = self.get_triplet_var_value(_trip_a) {
                                 if self.has_contradiction_flag {
                                     break;
                                 }
@@ -308,8 +308,10 @@ impl Solver {
                                     self.statistics.increment_simple_rule_applications();
                                 }
                             }
+                        }
                         // Rule 2: (x, y, 1) => x=1
-                        2 => if let Some(true) = self.get_triplet_var_value(_trip_c) {
+                        2 => {
+                            if let Some(true) = self.get_triplet_var_value(_trip_c) {
                                 if self.has_contradiction_flag {
                                     break;
                                 }
@@ -317,9 +319,11 @@ impl Solver {
                                     made_change_in_pass = true;
                                     self.statistics.increment_simple_rule_applications();
                                 }
+                            }
                         }
                         // Rule 3: (x, 0, z) => x=1
-                        3 => if let Some(false) = self.get_triplet_var_value(_trip_b) {
+                        3 => {
+                            if let Some(false) = self.get_triplet_var_value(_trip_b) {
                                 if self.has_contradiction_flag {
                                     break;
                                 }
@@ -327,9 +331,11 @@ impl Solver {
                                     made_change_in_pass = true;
                                     self.statistics.increment_simple_rule_applications();
                                 }
+                            }
                         }
                         // Rule 4: (x, 1, z) => x=z
-                        4 => if let Some(true) = self.get_triplet_var_value(_trip_b) {
+                        4 => {
+                            if let Some(true) = self.get_triplet_var_value(_trip_b) {
                                 if self.has_contradiction_flag {
                                     break;
                                 }
@@ -344,9 +350,11 @@ impl Solver {
                                         self.statistics.increment_simple_rule_applications();
                                     }
                                 }
+                            }
                         }
                         // Rule 5: (x, y, 0) => x=-y
-                        5 => if let Some(false) = self.get_triplet_var_value(_trip_c) {
+                        5 => {
+                            if let Some(false) = self.get_triplet_var_value(_trip_c) {
                                 if self.has_contradiction_flag {
                                     break;
                                 }
@@ -361,9 +369,11 @@ impl Solver {
                                         self.statistics.increment_simple_rule_applications();
                                     }
                                 }
+                            }
                         }
                         // Rule 6: (x, x, z) => x=1, z=1
-                        6 => if _trip_a == _trip_b {
+                        6 => {
+                            if _trip_a == _trip_b {
                                 if self.has_contradiction_flag {
                                     break;
                                 }
@@ -378,9 +388,11 @@ impl Solver {
                                     made_change_in_pass = true;
                                     self.statistics.increment_simple_rule_applications();
                                 }
+                            }
                         }
                         // Rule 7: (x, y, y) => x=1
-                        7 => if _trip_b == _trip_c {
+                        7 => {
+                            if _trip_b == _trip_c {
                                 if self.has_contradiction_flag {
                                     break;
                                 }
@@ -388,12 +400,13 @@ impl Solver {
                                     made_change_in_pass = true;
                                     self.statistics.increment_simple_rule_applications();
                                 }
+                            }
                         }
-                        _ => panic!("Invalid rule number")
+                        _ => panic!("Invalid rule number"),
                     }
                     if self.has_contradiction_flag {
-                            break;
-                        }
+                        break;
+                    }
                 }
             }
 
