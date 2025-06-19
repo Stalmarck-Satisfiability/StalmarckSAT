@@ -1,5 +1,6 @@
 use crate::core::formula::{Formula, ImplicationFormula, TripletVar};
 use crate::solver::statistics::SolverStatistics;
+use crate::solver::variable_frequency::VariableFrequency;
 use std::collections::HashMap;
 
 /// Core solver for Stalmarck's method
@@ -12,6 +13,7 @@ pub struct Solver {
     current_num_variables: usize,
     pub statistics: SolverStatistics,
     verbosity: i32,
+    variable_frequency: VariableFrequency,
 }
 
 /// Helper struct to save/restore solver state
@@ -49,6 +51,10 @@ impl Solver {
 
         if let Some(triplet_formula_container) = formula.get_triplets() {
             self.current_triplets = triplet_formula_container.triplets.clone();
+
+            // Analyze variable frequencies
+            self.variable_frequency
+                .analyze_triplets(&self.current_triplets);
 
             if let Some(root_var) = &triplet_formula_container.root_var {
                 self.assign_value(root_var, true);
@@ -164,33 +170,23 @@ impl Solver {
         }
     }
 
-    /// Find an unassigned variable to branch on
+    /// Find unassigned variable using frequency heuristic
     fn find_unassigned_variable(&self) -> Option<i32> {
-        // Strategy 1: Prioritize original variables first
-        for i in 1..=self.current_num_variables {
-            let var_id = i as i32;
-            if !self.assignments.contains_key(&var_id) {
-                return Some(var_id);
-            }
+        // First try to get most frequent original variable
+        if let Some(var_id) = self.variable_frequency.get_most_frequent_unassigned(
+            &self.assignments,
+            true, // original vars only
+            self.current_num_variables as i32,
+        ) {
+            return Some(var_id);
         }
 
-        // Strategy 2: Check bridge variables in triplets
-        let mut vars_in_triplets = std::collections::HashSet::new();
-        for (ta, tb, tc) in &self.current_triplets {
-            for tv_ref in [ta, tb, tc] {
-                if let TripletVar::Var(id) = tv_ref {
-                    vars_in_triplets.insert(*id);
-                }
-            }
-        }
-
-        for var_id in vars_in_triplets {
-            if !self.assignments.contains_key(&var_id) {
-                return Some(var_id);
-            }
-        }
-
-        None
+        // Fallback to most frequent bridge variable
+        self.variable_frequency.get_most_frequent_unassigned(
+            &self.assignments,
+            false, // include bridge vars
+            self.current_num_variables as i32,
+        )
     }
 
     /// Save the current solver state
