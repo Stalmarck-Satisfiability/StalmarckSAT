@@ -1,6 +1,6 @@
 use crate::core::formula::Formula;
 use crate::parser::dimacs::Parser;
-use crate::solver::solver::Solver;
+use crate::solver::solver::{Solver, SimpleRulePolicy};
 use crate::Result;
 
 /// Main solver class for Stålmarck's method
@@ -56,5 +56,10 @@ impl StalmarckSolver {
     /// Set the verbosity level
     pub fn set_verbosity(&mut self, level: i32) {
         self.verbosity = level;
+    }
+
+    /// Set the simple rule policy
+    pub fn set_simple_rule_policy(&mut self, policy: SimpleRulePolicy) {
+        self.solver.set_simple_rule_policy(policy);
     }
 }
