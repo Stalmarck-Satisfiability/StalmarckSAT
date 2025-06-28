@@ -9,7 +9,7 @@ pub use crate::core::formula::Formula;
 pub use crate::core::stalmarck::StalmarckSolver;
 pub use crate::error::Error;
 pub use crate::parser::dimacs::Parser;
-pub use crate::solver::solver::{Solver, SimpleRulePolicy};
+pub use crate::solver::solver::{SimpleRulePolicy, Solver};
 
 // Re-export the Result type with our own Error type
 pub type Result<T> = std::result::Result<T, Error>;

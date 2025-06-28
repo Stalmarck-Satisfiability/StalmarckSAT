@@ -1,8 +1,8 @@
 use clap::Parser;
 // Import from our library
+use stalmarck_sat::solver::solver::SimpleRulePolicy;
 use stalmarck_sat::Result;
 use stalmarck_sat::StalmarckSolver;
-use stalmarck_sat::solver::solver::SimpleRulePolicy;
 
 /// Stålmarck's SAT solver
 #[derive(Parser, Debug)]

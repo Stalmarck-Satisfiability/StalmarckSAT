@@ -1,6 +1,6 @@
 use crate::core::formula::Formula;
 use crate::parser::dimacs::Parser;
-use crate::solver::solver::{Solver, SimpleRulePolicy};
+use crate::solver::solver::{SimpleRulePolicy, Solver};
 use crate::Result;
 
 /// Main solver class for Stålmarck's method
