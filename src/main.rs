@@ -1,6 +1,6 @@
 use clap::Parser;
-// Import from our library
-use stalmarck_sat::solver::solver::SimpleRulePolicy;
+
+use stalmarck_sat::solver::solver::Dilemma;
 use stalmarck_sat::Result;
 use stalmarck_sat::StalmarckSolver;
 
@@ -20,26 +20,9 @@ struct Args {
     #[arg(short, long, default_value_t = 30.0)]
     timeout: f64,
 
-    /// Simple rule policy: frequency or sequential
-    #[arg(short = 'p', long, value_enum, default_value_t = SimpleRulePolicyArg::Frequency)]
-    policy: SimpleRulePolicyArg,
-}
-
-#[derive(clap::ValueEnum, Clone, Debug)]
-enum SimpleRulePolicyArg {
-    /// Use frequency-based rule application (default)
-    Frequency,
-    /// Use sequential rule application
-    Sequential,
-}
-
-impl From<SimpleRulePolicyArg> for SimpleRulePolicy {
-    fn from(arg: SimpleRulePolicyArg) -> Self {
-        match arg {
-            SimpleRulePolicyArg::Frequency => SimpleRulePolicy::Frequency,
-            SimpleRulePolicyArg::Sequential => SimpleRulePolicy::Sequential,
-        }
-    }
+    /// Dilemma rule strategy
+    #[arg(long, value_enum, default_value_t = Dilemma::Cdb)]
+    dilemma: Dilemma,
 }
 
 fn main() -> Result<()> {
@@ -53,7 +36,7 @@ fn main() -> Result<()> {
     let mut solver = StalmarckSolver::new();
     solver.set_verbosity(args.verbosity);
     solver.set_timeout(args.timeout);
-    solver.set_simple_rule_policy(args.policy.into());
+    solver.set_dilemma_strategy(args.dilemma);
 
     // Solve the formula
     match solver.solve_from_file(&args.file_path) {
