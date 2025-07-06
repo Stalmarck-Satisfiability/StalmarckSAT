@@ -12,6 +12,14 @@ pub enum Dilemma {
     None,
 }
 
+/// Simple rule application policy
+#[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq)]
+pub enum SimpleRulePolicy {
+    #[default]
+    None,
+    Frequency,
+}
+
 /// Core solver for Stalmarck's method
 #[derive(Debug, Default)]
 pub struct Solver {
@@ -24,6 +32,7 @@ pub struct Solver {
     verbosity: i32,
     variable_frequency: VariableFrequency,
     dilemma_strategy: Dilemma,
+    simple_rule_policy: SimpleRulePolicy,
 }
 
 /// Helper struct to save/restore solver state
@@ -51,8 +60,17 @@ impl Solver {
     }
 
     /// Set the dilemma strategy
-    pub fn set_dilemma_strategy(&mut self, strategy: Dilemma) {
-        self.dilemma_strategy = strategy;
+    pub fn set_dilemma_strategy(&mut self, dilemma: Dilemma) {
+        self.dilemma_strategy = dilemma;
+    }
+
+    pub fn set_simple_rule_policy(&mut self, policy: SimpleRulePolicy) {
+        self.simple_rule_policy = policy;
+    }
+
+    /// Get the verbosity level
+    pub fn get_verbosity(&self) -> i32 {
+        self.verbosity
     }
 
     /// Solving loop
@@ -67,10 +85,19 @@ impl Solver {
         if let Some(triplet_formula_container) = formula.get_triplets() {
             self.current_triplets = triplet_formula_container.triplets.clone();
 
-            if self.dilemma_strategy == Dilemma::Cdb {
+            if self.dilemma_strategy == Dilemma::Cdb
+                || self.simple_rule_policy == SimpleRulePolicy::Frequency
+            {
                 // Analyze variable frequencies
                 self.variable_frequency
                     .analyze_triplets(&self.current_triplets);
+            }
+
+            if self.simple_rule_policy == SimpleRulePolicy::Frequency {
+                self.current_triplets.sort_by_key(|triplet| {
+                    let score = self.variable_frequency.get_triplet_frequency(triplet);
+                    std::cmp::Reverse(score)
+                });
             }
 
             if let Some(root_var) = &triplet_formula_container.root_var {

@@ -1,6 +1,6 @@
 use crate::core::formula::Formula;
 use crate::parser::dimacs::Parser;
-use crate::solver::solver::{Dilemma, Solver};
+use crate::solver::solver::{Dilemma, SimpleRulePolicy, Solver};
 use crate::Result;
 
 /// Main solver class for Stålmarck's method
@@ -61,5 +61,10 @@ impl StalmarckSolver {
     /// Set the dilemma strategy
     pub fn set_dilemma_strategy(&mut self, strategy: Dilemma) {
         self.solver.set_dilemma_strategy(strategy);
+    }
+
+    /// Set the simple rule policy
+    pub fn set_simple_rule_policy(&mut self, policy: SimpleRulePolicy) {
+        self.solver.set_simple_rule_policy(policy);
     }
 }

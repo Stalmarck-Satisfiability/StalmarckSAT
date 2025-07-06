@@ -54,4 +54,17 @@ impl VariableFrequency {
         }
         None
     }
+
+    /// Get the frequency score for a triplet
+    pub fn get_triplet_frequency(&self, triplet: &(TripletVar, TripletVar, TripletVar)) -> usize {
+        let (a, b, c) = triplet;
+        let mut score = 0;
+
+        for triplet_var in [a, b, c] {
+            if let TripletVar::Var(id) = triplet_var {
+                score += self.frequency_map.get(id).unwrap_or(&0);
+            }
+        }
+        score
+    }
 }
