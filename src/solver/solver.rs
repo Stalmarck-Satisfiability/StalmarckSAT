@@ -347,113 +347,117 @@ impl Solver {
         loop {
             let mut made_change_in_pass = false;
 
-            // By cloning inside the loop, we ensure that each pass of rule application
-            let triplets_to_process = self.current_triplets.clone();
+            for i in 0..self.current_triplets.len() {
+                if self.has_contradiction_flag {
+                    break;
+                }
 
-            for (_trip_a, _trip_b, _trip_c) in triplets_to_process.iter() {
-                let _initial_assignments_snapshot = self.assignments.clone();
+                // Get a clone of the triplet to avoid borrowing issues
+                let (_trip_a, _trip_b, _trip_c) = self.current_triplets[i].clone();
 
                 // Rule 1: (0, y, z) => y=1, z=0
-                if let Some(false) = self.get_triplet_var_value(_trip_a) {
+                if let Some(false) = self.get_triplet_var_value(&_trip_a) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_b, true) {
+                    if self.assign_value(&_trip_b, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_c, false) {
+                    if self.assign_value(&_trip_c, false) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
+
                 // Rule 2: (x, y, 1) => x=1
-                else if let Some(true) = self.get_triplet_var_value(_trip_c) {
+                else if let Some(true) = self.get_triplet_var_value(&_trip_c) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
+
                 // Rule 3: (x, 0, z) => x=1
-                else if let Some(false) = self.get_triplet_var_value(_trip_b) {
+                else if let Some(false) = self.get_triplet_var_value(&_trip_b) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
+
                 // Rule 4: (x, 1, z) => x=z
-                else if let Some(true) = self.get_triplet_var_value(_trip_b) {
+                else if let Some(true) = self.get_triplet_var_value(&_trip_b) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if let Some(val_c) = self.get_triplet_var_value(_trip_c) {
-                        if self.assign_value(_trip_a, val_c) {
+                    if let Some(val_c) = self.get_triplet_var_value(&_trip_c) {
+                        if self.assign_value(&_trip_a, val_c) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
-                    } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
-                        if self.assign_value(_trip_c, val_a) {
+                    } else if let Some(val_a) = self.get_triplet_var_value(&_trip_a) {
+                        if self.assign_value(&_trip_c, val_a) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
                     }
                 }
+
                 // Rule 5: (x, y, 0) => x=-y
-                else if let Some(false) = self.get_triplet_var_value(_trip_c) {
+                else if let Some(false) = self.get_triplet_var_value(&_trip_c) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if let Some(val_b) = self.get_triplet_var_value(_trip_b) {
-                        if self.assign_value(_trip_a, !val_b) {
+                    if let Some(val_b) = self.get_triplet_var_value(&_trip_b) {
+                        if self.assign_value(&_trip_a, !val_b) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
-                    } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
-                        if self.assign_value(_trip_b, !val_a) {
+                    } else if let Some(val_a) = self.get_triplet_var_value(&_trip_a) {
+                        if self.assign_value(&_trip_b, !val_a) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
                     }
                 }
+
                 // Rule 6: (x, x, z) => x=1, z=1
                 else if _trip_a == _trip_b {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_c, true) {
+                    if self.assign_value(&_trip_c, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
+                
                 // Rule 7: (x, y, y) => x=1
                 else if _trip_b == _trip_c {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
-                }
-
-                if self.has_contradiction_flag {
-                    break;
                 }
             }
 
