@@ -94,8 +94,9 @@ impl Solver {
             }
 
             if self.simple_rule_policy == SimpleRulePolicy::Frequency {
-                self.current_triplets
-                    .sort_by_key(|triplet| self.variable_frequency.get_triplet_frequency(triplet));
+                self.current_triplets.sort_by_key(|triplet| {
+                    std::cmp::Reverse(self.variable_frequency.get_potential_deduction_score(triplet))
+                });
             }
 
             if let Some(root_var) = &triplet_formula_container.root_var {
