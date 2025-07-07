@@ -94,10 +94,8 @@ impl Solver {
             }
 
             if self.simple_rule_policy == SimpleRulePolicy::Frequency {
-                self.current_triplets.sort_by_key(|triplet| {
-                    let score = self.variable_frequency.get_triplet_frequency(triplet);
-                    std::cmp::Reverse(score)
-                });
+                self.current_triplets
+                    .sort_by_key(|triplet| self.variable_frequency.get_triplet_frequency(triplet));
             }
 
             if let Some(root_var) = &triplet_formula_container.root_var {
@@ -349,6 +347,7 @@ impl Solver {
         loop {
             let mut made_change_in_pass = false;
 
+            // By cloning inside the loop, we ensure that each pass of rule application
             let triplets_to_process = self.current_triplets.clone();
 
             for (_trip_a, _trip_b, _trip_c) in triplets_to_process.iter() {
