@@ -12,6 +12,14 @@ pub enum Dilemma {
     None,
 }
 
+/// Simple rule application policy
+#[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq)]
+pub enum SimpleRuleStrategy {
+    #[default]
+    None,
+    Dpo,
+}
+
 /// Core solver for Stalmarck's method
 #[derive(Debug, Default)]
 pub struct Solver {
@@ -24,6 +32,7 @@ pub struct Solver {
     verbosity: i32,
     variable_frequency: VariableFrequency,
     dilemma_strategy: Dilemma,
+    simple_rule_strategy: SimpleRuleStrategy,
 }
 
 /// Helper struct to save/restore solver state
@@ -51,8 +60,17 @@ impl Solver {
     }
 
     /// Set the dilemma strategy
-    pub fn set_dilemma_strategy(&mut self, strategy: Dilemma) {
-        self.dilemma_strategy = strategy;
+    pub fn set_dilemma_strategy(&mut self, dilemma: Dilemma) {
+        self.dilemma_strategy = dilemma;
+    }
+
+    pub fn set_simple_rule_strategy(&mut self, policy: SimpleRuleStrategy) {
+        self.simple_rule_strategy = policy;
+    }
+
+    /// Get the verbosity level
+    pub fn get_verbosity(&self) -> i32 {
+        self.verbosity
     }
 
     /// Solving loop
@@ -67,10 +85,21 @@ impl Solver {
         if let Some(triplet_formula_container) = formula.get_triplets() {
             self.current_triplets = triplet_formula_container.triplets.clone();
 
-            if self.dilemma_strategy == Dilemma::Cdb {
+            if self.dilemma_strategy == Dilemma::Cdb
+                || self.simple_rule_strategy == SimpleRuleStrategy::Dpo
+            {
                 // Analyze variable frequencies
                 self.variable_frequency
                     .analyze_triplets(&self.current_triplets);
+            }
+
+            if self.simple_rule_strategy == SimpleRuleStrategy::Dpo {
+                self.current_triplets.sort_by_key(|triplet| {
+                    std::cmp::Reverse(
+                        self.variable_frequency
+                            .get_potential_deduction_score(triplet),
+                    )
+                });
             }
 
             if let Some(root_var) = &triplet_formula_container.root_var {
@@ -322,77 +351,80 @@ impl Solver {
         loop {
             let mut made_change_in_pass = false;
 
-            let triplets_to_process = self.current_triplets.clone();
+            for i in 0..self.current_triplets.len() {
+                if self.has_contradiction_flag {
+                    break;
+                }
 
-            for (_trip_a, _trip_b, _trip_c) in triplets_to_process.iter() {
-                let _initial_assignments_snapshot = self.assignments.clone();
+                // Get a clone of the triplet to avoid borrowing issues
+                let (_trip_a, _trip_b, _trip_c) = self.current_triplets[i].clone();
 
                 // Rule 1: (0, y, z) => y=1, z=0
-                if let Some(false) = self.get_triplet_var_value(_trip_a) {
+                if let Some(false) = self.get_triplet_var_value(&_trip_a) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_b, true) {
+                    if self.assign_value(&_trip_b, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_c, false) {
+                    if self.assign_value(&_trip_c, false) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
                 // Rule 2: (x, y, 1) => x=1
-                else if let Some(true) = self.get_triplet_var_value(_trip_c) {
+                else if let Some(true) = self.get_triplet_var_value(&_trip_c) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
                 // Rule 3: (x, 0, z) => x=1
-                else if let Some(false) = self.get_triplet_var_value(_trip_b) {
+                else if let Some(false) = self.get_triplet_var_value(&_trip_b) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
                 // Rule 4: (x, 1, z) => x=z
-                else if let Some(true) = self.get_triplet_var_value(_trip_b) {
+                else if let Some(true) = self.get_triplet_var_value(&_trip_b) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if let Some(val_c) = self.get_triplet_var_value(_trip_c) {
-                        if self.assign_value(_trip_a, val_c) {
+                    if let Some(val_c) = self.get_triplet_var_value(&_trip_c) {
+                        if self.assign_value(&_trip_a, val_c) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
-                    } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
-                        if self.assign_value(_trip_c, val_a) {
+                    } else if let Some(val_a) = self.get_triplet_var_value(&_trip_a) {
+                        if self.assign_value(&_trip_c, val_a) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
                     }
                 }
                 // Rule 5: (x, y, 0) => x=-y
-                else if let Some(false) = self.get_triplet_var_value(_trip_c) {
+                else if let Some(false) = self.get_triplet_var_value(&_trip_c) {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if let Some(val_b) = self.get_triplet_var_value(_trip_b) {
-                        if self.assign_value(_trip_a, !val_b) {
+                    if let Some(val_b) = self.get_triplet_var_value(&_trip_b) {
+                        if self.assign_value(&_trip_a, !val_b) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
-                    } else if let Some(val_a) = self.get_triplet_var_value(_trip_a) {
-                        if self.assign_value(_trip_b, !val_a) {
+                    } else if let Some(val_a) = self.get_triplet_var_value(&_trip_a) {
+                        if self.assign_value(&_trip_b, !val_a) {
                             made_change_in_pass = true;
                             self.statistics.increment_simple_rule_applications();
                         }
@@ -403,14 +435,14 @@ impl Solver {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_c, true) {
+                    if self.assign_value(&_trip_c, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
@@ -420,14 +452,10 @@ impl Solver {
                     if self.has_contradiction_flag {
                         break;
                     }
-                    if self.assign_value(_trip_a, true) {
+                    if self.assign_value(&_trip_a, true) {
                         made_change_in_pass = true;
                         self.statistics.increment_simple_rule_applications();
                     }
-                }
-
-                if self.has_contradiction_flag {
-                    break;
                 }
             }
 

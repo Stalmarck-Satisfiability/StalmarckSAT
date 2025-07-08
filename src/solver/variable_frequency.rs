@@ -54,4 +54,39 @@ impl VariableFrequency {
         }
         None
     }
+
+    /// Get the frequency score for a triplet
+    pub fn get_triplet_frequency(&self, triplet: &(TripletVar, TripletVar, TripletVar)) -> usize {
+        let (a, b, c) = triplet;
+        let mut score = 0;
+
+        for triplet_var in [a, b, c] {
+            if let TripletVar::Var(id) = triplet_var {
+                score += self.frequency_map.get(id).unwrap_or(&0);
+            }
+        }
+        score
+    }
+
+    /// Get the potential deduction score for a triplet
+    pub fn get_potential_deduction_score(
+        &self,
+        triplet: &(TripletVar, TripletVar, TripletVar),
+    ) -> usize {
+        let (a, b, c) = triplet;
+        let base_frequency_score = self.get_triplet_frequency(triplet);
+
+        // Score based on how many variables can be deduced from the triplet's structure
+        let mut potential_deductions = 0;
+        if a == b {
+            // Rule (x, x, z) => x=1, z=1 (deduces 2 vars)
+            potential_deductions = 2;
+        } else if b == c {
+            // Rule (x, y, y) => x=1 (deduces 1 var)
+            potential_deductions = 1;
+        }
+
+        // The final score is a combination of potential deductions and frequency
+        (1 + potential_deductions) * base_frequency_score
+    }
 }

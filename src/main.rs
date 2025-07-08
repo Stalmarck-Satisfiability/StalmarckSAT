@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use stalmarck_sat::solver::solver::Dilemma;
+use stalmarck_sat::solver::solver::{Dilemma, SimpleRuleStrategy};
 use stalmarck_sat::Result;
 use stalmarck_sat::StalmarckSolver;
 
@@ -23,6 +23,10 @@ struct Args {
     /// Dilemma rule strategy
     #[arg(long, value_enum, default_value_t = Dilemma::Cdb)]
     dilemma: Dilemma,
+
+    /// Simple rule application policy
+    #[arg(long = "simple-rule", value_enum, default_value_t = SimpleRuleStrategy::None)]
+    simple_rule_strategy: SimpleRuleStrategy,
 }
 
 fn main() -> Result<()> {
@@ -37,6 +41,7 @@ fn main() -> Result<()> {
     solver.set_verbosity(args.verbosity);
     solver.set_timeout(args.timeout);
     solver.set_dilemma_strategy(args.dilemma);
+    solver.set_simple_rule_strategy(args.simple_rule_strategy);
 
     // Solve the formula
     match solver.solve_from_file(&args.file_path) {
