@@ -14,10 +14,10 @@ pub enum Dilemma {
 
 /// Simple rule application policy
 #[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq)]
-pub enum SimpleRulePolicy {
+pub enum SimpleRuleStrategy {
     #[default]
     None,
-    Frequency,
+    Dpo,
 }
 
 /// Core solver for Stalmarck's method
@@ -32,7 +32,7 @@ pub struct Solver {
     verbosity: i32,
     variable_frequency: VariableFrequency,
     dilemma_strategy: Dilemma,
-    simple_rule_policy: SimpleRulePolicy,
+    simple_rule_strategy: SimpleRuleStrategy,
 }
 
 /// Helper struct to save/restore solver state
@@ -64,8 +64,8 @@ impl Solver {
         self.dilemma_strategy = dilemma;
     }
 
-    pub fn set_simple_rule_policy(&mut self, policy: SimpleRulePolicy) {
-        self.simple_rule_policy = policy;
+    pub fn set_simple_rule_strategy(&mut self, policy: SimpleRuleStrategy) {
+        self.simple_rule_strategy = policy;
     }
 
     /// Get the verbosity level
@@ -86,16 +86,19 @@ impl Solver {
             self.current_triplets = triplet_formula_container.triplets.clone();
 
             if self.dilemma_strategy == Dilemma::Cdb
-                || self.simple_rule_policy == SimpleRulePolicy::Frequency
+                || self.simple_rule_strategy == SimpleRuleStrategy::Dpo
             {
                 // Analyze variable frequencies
                 self.variable_frequency
                     .analyze_triplets(&self.current_triplets);
             }
 
-            if self.simple_rule_policy == SimpleRulePolicy::Frequency {
+            if self.simple_rule_strategy == SimpleRuleStrategy::Dpo {
                 self.current_triplets.sort_by_key(|triplet| {
-                    std::cmp::Reverse(self.variable_frequency.get_potential_deduction_score(triplet))
+                    std::cmp::Reverse(
+                        self.variable_frequency
+                            .get_potential_deduction_score(triplet),
+                    )
                 });
             }
 
@@ -373,7 +376,6 @@ impl Solver {
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
-
                 // Rule 2: (x, y, 1) => x=1
                 else if let Some(true) = self.get_triplet_var_value(&_trip_c) {
                     if self.has_contradiction_flag {
@@ -384,7 +386,6 @@ impl Solver {
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
-
                 // Rule 3: (x, 0, z) => x=1
                 else if let Some(false) = self.get_triplet_var_value(&_trip_b) {
                     if self.has_contradiction_flag {
@@ -395,7 +396,6 @@ impl Solver {
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
-
                 // Rule 4: (x, 1, z) => x=z
                 else if let Some(true) = self.get_triplet_var_value(&_trip_b) {
                     if self.has_contradiction_flag {
@@ -413,7 +413,6 @@ impl Solver {
                         }
                     }
                 }
-
                 // Rule 5: (x, y, 0) => x=-y
                 else if let Some(false) = self.get_triplet_var_value(&_trip_c) {
                     if self.has_contradiction_flag {
@@ -431,7 +430,6 @@ impl Solver {
                         }
                     }
                 }
-
                 // Rule 6: (x, x, z) => x=1, z=1
                 else if _trip_a == _trip_b {
                     if self.has_contradiction_flag {
@@ -449,7 +447,6 @@ impl Solver {
                         self.statistics.increment_simple_rule_applications();
                     }
                 }
-                
                 // Rule 7: (x, y, y) => x=1
                 else if _trip_b == _trip_c {
                     if self.has_contradiction_flag {
