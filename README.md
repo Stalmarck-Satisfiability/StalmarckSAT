@@ -1,12 +1,16 @@
 # StalmarckSAT
 
 [![CI](https://github.com/Stalmarck-Satisfiability/StalmarckSAT/actions/workflows/build.yml/badge.svg)](https://github.com/Stalmarck-Satisfiability/StalmarckSAT/actions/workflows/build.yml)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://stalmarck-satisfiability.github.io/StalmarckSAT/)
 [![Crates.io](https://img.shields.io/crates/v/stalmarck-sat.svg)](https://crates.io/crates/stalmarck-sat)
 [![PyPI](https://img.shields.io/pypi/v/pystalmarck.svg)](https://pypi.org/project/pystalmarck/)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 StalmarckSAT is a SAT solver based on the Stålmarck Procedure. It is designed with the goal of furthering the research and development of the Stålmarck Procedure, a boolean satisfiability procedure that has been untouched for the last three decades.
+
+## Documentation
+PyStalmarck documentation is available [here](https://stalmarck-satisfiability.github.io/StalmarckSAT//).
 
 ## Installation
 
@@ -58,7 +62,7 @@ StalmarckSAT accepts DIMACS CNF format files and outputs either `SAT` or `UNSAT`
 stalmarck_sat formula.cnf
 
 # Or from source
-./target/debug/stalmarck_sat formula.cnf
+cargo run formula.cnf
 ```
 
 ### Rust Library
@@ -84,21 +88,8 @@ Use StalmarckSAT from Python:
 ```python
 import pystalmarck
 
-# Create a solver instance
-solver = pystalmarck.PyStalmarckSolver()
-
 # Solve from file
-result = solver.solve_from_file("formula.cnf")
-print("SAT" if result else "UNSAT")
-
-# Or solve from CNF string
-cnf_content = """
-c Simple formula: (x1 OR x2) AND (NOT x1 OR x2)
-p cnf 2 2
-1 2 0
--1 2 0
-"""
-result = solver.solve_from_string(cnf_content)
+result = pystalmarck.solve_cnf_file("formula.cnf")
 print("SAT" if result else "UNSAT")
 ```
 

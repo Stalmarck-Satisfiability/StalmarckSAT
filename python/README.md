@@ -2,6 +2,9 @@
 
 Python bindings for StalmarckSAT - A SAT solver based on the Stålmarck procedure.
 
+## Documentation
+PyStalmarck documentation is available [here](https://stalmarck-satisfiability.github.io/StalmarckSAT/python_api/).
+
 ## Installation
 
 ### From Source
@@ -25,13 +28,10 @@ pip install pystalmarck
 ### Basic Usage
 
 ```python
-from pystalmarck import PyStalmarckSolver
-
-# Create a solver instance
-solver = PyStalmarckSolver()
+import pystalmarck
 
 # Solve a CNF file
-is_satisfiable = solver.solve_file("formula.cnf")
+is_satisfiable = pystalmarck.solve_cnf_file("formula.cnf")
 
 if is_satisfiable:
     print("SAT")
@@ -52,6 +52,8 @@ print("SAT" if result else "UNSAT")
 ### Configuration Options
 
 ```python
+from pystalmarck import PyStalmarckSolver
+
 solver = PyStalmarckSolver()
 
 # Set verbosity level (0=quiet, 1=normal, 2=verbose)
