@@ -1,0 +1,48 @@
+site_name: StalmarckSAT
+repo_url: https://github.com/Stalmarck-Satisfiability/StalmarckSAT
+repo_name: Stalmarck-Satisfiability/StalmarckSAT
+edit_uri: edit/main/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: true
+
+nav:
+  - Home: index.md
+  - Rust API:
+    - stalmarck_sat: rust/stalmarck_sat/index.html
+  - Python API:
+    - pystalmarck: python_api.md
+  - Contributing: CONTRIBUTING.md
+
+extra_css:
+  - stylesheets/extra.css

@@ -5,3 +5,6 @@ black>=22.0
 isort>=5.0
 flake8>=5.0
 mypy>=1.0
+mkdocs
+mkdocs-material
+mkdocstrings[python]
