@@ -218,3 +218,25 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Rust
+/target/
+
+# Python
+/env/
+**/__pycache__/
+*.pyc
+*.so
+/wheels/
+/site/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+
+# Generated documentation
+/site/
+/docs/rust/

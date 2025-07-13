@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["core","error","parser","solver"],"type":["Result"]};
