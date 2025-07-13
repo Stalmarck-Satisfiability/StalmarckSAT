@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ImplicationFormula","TripletVar"],"struct":["Formula","TripletFormula"]};
