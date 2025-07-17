@@ -100,7 +100,7 @@ stalmarck_sat [OPTIONS] <FILE_PATH>
 
 Options:
   -v, --verbosity <VERBOSITY>  Verbosity level (0-2) [default: 1]
-  -t, --timeout <TIMEOUT>      Timeout in seconds [default: 30.0]
+  -t, --timeout <TIMEOUT>      Timeout in seconds [default: no timeout]
   -h, --help                   Print help
 ```
 

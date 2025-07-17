@@ -3,6 +3,7 @@ use crate::solver::statistics::SolverStatistics;
 use crate::solver::variable_frequency::VariableFrequency;
 use clap::ValueEnum;
 use std::collections::HashMap;
+use std::time::Instant;
 
 /// Dilemma rule strategy
 #[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq)]
@@ -33,6 +34,9 @@ pub struct Solver {
     variable_frequency: VariableFrequency,
     dilemma_strategy: Dilemma,
     simple_rule_strategy: SimpleRuleStrategy,
+    timeout: f64,
+    start_time: Option<Instant>,
+    timeout_reached: bool,
 }
 
 /// Helper struct to save/restore solver state
@@ -59,6 +63,11 @@ impl Solver {
         self.verbosity = level;
     }
 
+    /// Set the timeout in seconds
+    pub fn set_timeout(&mut self, seconds: f64) {
+        self.timeout = seconds;
+    }
+
     /// Set the dilemma strategy
     pub fn set_dilemma_strategy(&mut self, dilemma: Dilemma) {
         self.dilemma_strategy = dilemma;
@@ -77,6 +86,7 @@ impl Solver {
     pub fn solve(&mut self, formula: &mut Formula) -> bool {
         self.reset();
         self.statistics.reset();
+        self.start_time = Some(Instant::now());
 
         // Translate to triplets
         formula.translate_to_implication_form();
@@ -138,6 +148,20 @@ impl Solver {
 
     /// Recursive solver
     fn solve_recursive(&mut self, formula: &Formula, depth: usize) -> bool {
+        if self.timeout_reached {
+            return false;
+        }
+        // Check for timeout
+        if self.timeout > 0.0 {
+            if let Some(start_time) = self.start_time {
+                if start_time.elapsed().as_secs_f64() >= self.timeout {
+                    self.timeout_reached = true;
+
+                    // The caller should handle this as a timeout case
+                    return false;
+                }
+            }
+        }
         // Track statistics - each recursive call represents an iteration
         self.statistics.increment_recursive_calls();
         self.statistics.update_max_depth(depth);
@@ -611,6 +635,11 @@ impl Solver {
         self.has_complete_assignment_flag
     }
 
+    /// Check if a timeout occurred
+    pub fn timeout_occurred(&self) -> bool {
+        self.timeout_reached
+    }
+
     /// Reset the solver state
     pub fn reset(&mut self) {
         self.assignments.clear();
@@ -619,5 +648,6 @@ impl Solver {
         self.current_triplets.clear();
         self.current_num_variables = 0;
         self.statistics.reset();
+        self.timeout_reached = false;
     }
 }
