@@ -1,3 +1,5 @@
+use std::time::{Duration, Instant};
+
 /// Statistics for tracking solver performance and progress
 #[derive(Debug, Default, Clone)]
 pub struct SolverStatistics {
@@ -11,12 +13,33 @@ pub struct SolverStatistics {
     pub max_depth: usize,
     /// Number of times dilemma rule was applied (branching)
     pub dilemma_rule_applications: usize,
+    /// Total time spent in parsing
+    pub parse_time: Duration,
+    /// Total time spent in translation
+    pub translate_time: Duration,
+    /// Total time spent in search
+    pub search_time: Duration,
+    /// Start time for the solver
+    start_time: Option<Instant>,
 }
 
 impl SolverStatistics {
+    /// Create a new instance of `SolverStatistics`
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Reset all statistics to zero
     pub fn reset(&mut self) {
-        *self = Self::default();
+        self.recursive_calls = 0;
+        self.simple_rule_applications = 0;
+        self.subproblems_explored = 0;
+        self.max_depth = 0;
+        self.dilemma_rule_applications = 0;
+        self.parse_time = Duration::default();
+        self.translate_time = Duration::default();
+        self.search_time = Duration::default();
+        self.start_time = Some(Instant::now());
     }
 
     /// Increment the recursive calls counter
@@ -46,22 +69,10 @@ impl SolverStatistics {
         self.dilemma_rule_applications += 1;
     }
 
-    /// Print progress information with specified verbosity level
-    pub fn print_progress(&self, _depth: usize, verbosity: i32) {
-        if verbosity >= 2 {
-            println!("Iteration number: {}", self.recursive_calls);
-            println!(
-                "Simple Rule Applications: {}, Dilemma Rule Applications: {}, Subproblems Explored: {}\n",
-                self.simple_rule_applications, self.dilemma_rule_applications, self.subproblems_explored
-            );
-            println!("=========================\n");
-        }
-    }
-
     /// Print final statistics summary
     pub fn print_summary(&self, verbosity: i32) {
-        if verbosity >= 1 {
-            println!("\n=== Solver Statistics ===");
+        if verbosity > 0 {
+            println!("\n=== Search Statistics ===");
             println!("Total iterations: {}", self.recursive_calls);
             println!(
                 "Total simple rule applications: {}",
@@ -73,7 +84,52 @@ impl SolverStatistics {
             );
             println!("Total subproblems explored: {}", self.subproblems_explored);
             println!("Maximum depth reached: {}", self.max_depth);
-            println!("========================\n");
+            println!("=========================");
+
+            if verbosity >= 1 {
+                println!("\n--- [ run-time profiling ] -------------------------------------------------");
+                let total_solve_time = self.parse_time + self.translate_time + self.search_time;
+                if total_solve_time.as_secs_f64() > 0.0 {
+                    let parse_percent =
+                        (self.parse_time.as_secs_f64() / total_solve_time.as_secs_f64()) * 100.0;
+                    let translate_percent = (self.translate_time.as_secs_f64()
+                        / total_solve_time.as_secs_f64())
+                        * 100.0;
+                    let search_percent =
+                        (self.search_time.as_secs_f64() / total_solve_time.as_secs_f64()) * 100.0;
+
+                    println!(
+                        "{:10.2}s {:8.2}% parse",
+                        self.parse_time.as_secs_f64(),
+                        parse_percent
+                    );
+                    println!(
+                        "{:10.2}s {:8.2}% translate",
+                        self.translate_time.as_secs_f64(),
+                        translate_percent
+                    );
+                    println!(
+                        "{:10.2}s {:8.2}% search",
+                        self.search_time.as_secs_f64(),
+                        search_percent
+                    );
+                }
+                println!(
+                    "--------------------------------------------------------------------------"
+                );
+            }
+        }
+    }
+
+    /// Print progress information with specified verbosity level
+    pub fn print_progress(&self, _depth: usize, verbosity: i32) {
+        if verbosity >= 2 {
+            println!("Iteration number: {}", self.recursive_calls);
+            println!(
+                "Simple Rule Applications: {}, Dilemma Rule Applications: {}, Subproblems Explored: {}\n",
+                self.simple_rule_applications, self.dilemma_rule_applications, self.subproblems_explored
+            );
+            println!("=========================\n");
         }
     }
 }

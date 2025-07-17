@@ -104,11 +104,13 @@ fn test_individual_cnf_files() {
 
         let (output, exit_code) = run_solver_on_file(test_case.filename);
 
-        // Check the output matches expected result
-        assert_eq!(
-            output, test_case.expected_result,
-            "Test case '{}' failed: expected '{}', got '{}'",
-            test_case.description, test_case.expected_result, output
+        // Check that the output contains the expected result
+        assert!(
+            output.contains(test_case.expected_result),
+            "Test case '{}' failed: expected output to contain '{}', got '{}'",
+            test_case.description,
+            test_case.expected_result,
+            output
         );
 
         // Check exit codes (10 for SAT, 20 for UNSAT)

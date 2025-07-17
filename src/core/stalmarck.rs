@@ -22,7 +22,9 @@ impl StalmarckSolver {
     /// Solve from a file path
     pub fn solve_from_file(&mut self, filename: &str) -> Result<bool> {
         // Parse the DIMACS file
+        let parse_start = std::time::Instant::now();
         let mut formula = self.parser.parse_dimacs(filename)?;
+        self.solver.statistics.parse_time = parse_start.elapsed();
 
         // Solve the formula
         self.solve(&mut formula)
@@ -51,7 +53,30 @@ impl StalmarckSolver {
         self.is_tautology_result = is_negated_tautology;
 
         // Return true if the original formula is satisfiable
-        Ok(!is_negated_tautology)
+        let is_satisfiable = !is_negated_tautology;
+        if is_satisfiable {
+            let assignments = self.solver.get_assignments();
+            let num_vars = self.solver.get_num_original_variables();
+            let mut output = String::from("v");
+            for i in 1..=num_vars {
+                let var = i as i32;
+                if let Some(val) = assignments.get(&var) {
+                    if *val {
+                        output.push_str(&format!(" {}", var));
+                    } else {
+                        output.push_str(&format!(" -{}", var));
+                    }
+                } else {
+                    // If a variable is not in the assignments, it can be either true or false.
+                    // We'll default to false for this case.
+                    output.push_str(&format!(" -{}", var));
+                }
+            }
+            output.push_str(" 0");
+            println!("{}", output);
+        }
+
+        Ok(is_satisfiable)
     }
 
     /// Check if the formula is a tautology
