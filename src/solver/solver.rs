@@ -88,9 +88,11 @@ impl Solver {
         self.statistics.reset();
         self.start_time = Some(Instant::now());
 
+        let translate_start = Instant::now();
         // Translate to triplets
         formula.translate_to_implication_form();
         formula.encode_formula_to_triplets();
+        self.statistics.translate_time = translate_start.elapsed();
 
         if let Some(triplet_formula_container) = formula.get_triplets() {
             self.current_triplets = triplet_formula_container.triplets.clone();
@@ -140,7 +142,9 @@ impl Solver {
         self.statistics.increment_subproblems_explored();
 
         // Start the recursive search
+        let search_start = Instant::now();
         let result = self.solve_recursive(formula, 1);
+        self.statistics.search_time = search_start.elapsed();
 
         self.statistics.print_summary(self.verbosity);
         result
@@ -638,6 +642,16 @@ impl Solver {
     /// Check if a timeout occurred
     pub fn timeout_occurred(&self) -> bool {
         self.timeout_reached
+    }
+
+    /// Get the current assignments
+    pub fn get_assignments(&self) -> &HashMap<i32, bool> {
+        &self.assignments
+    }
+
+    /// Get the number of original variables
+    pub fn get_num_original_variables(&self) -> usize {
+        self.current_num_variables
     }
 
     /// Reset the solver state
