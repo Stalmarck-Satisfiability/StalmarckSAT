@@ -33,8 +33,19 @@ impl StalmarckSolver {
         // Set verbosity in the solver
         self.solver.set_verbosity(self.verbosity);
 
+        // Set timeout in the solver
+        self.solver.set_timeout(self.timeout);
+
         // Use the solver to determine if -F is a tautology
         let is_negated_tautology = self.solver.solve(&mut formula.clone());
+
+        // Check if a timeout occurred
+        if self.solver.timeout_occurred() {
+            println!("UNKNOWN (Timeout)");
+            // Exit or handle the timeout case appropriately
+            // For now, we'll exit the process
+            std::process::exit(1);
+        }
 
         // Store the result
         self.is_tautology_result = is_negated_tautology;
@@ -51,6 +62,7 @@ impl StalmarckSolver {
     /// Set the timeout value in seconds
     pub fn set_timeout(&mut self, seconds: f64) {
         self.timeout = seconds;
+        self.solver.set_timeout(seconds);
     }
 
     /// Set the verbosity level
