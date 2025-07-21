@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["solver","statistics","variable_frequency"]};
