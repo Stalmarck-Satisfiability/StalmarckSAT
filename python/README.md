@@ -59,8 +59,8 @@ solver = PyStalmarckSolver()
 # Set verbosity level (0=quiet, 1=normal, 2=verbose)
 solver.set_verbosity(1)
 
-# Set timeout in seconds
-solver.set_timeout(30.0)
+# Set timeout in seconds (0.0 means no timeout)
+solver.set_timeout(0.0)
 
 # Solve the formula
 result = solver.solve_file("formula.cnf")
@@ -99,7 +99,7 @@ Where:
 
 ### Functions
 
-- `solve_cnf_file(file_path: str, verbosity: int = 0, timeout: float = 30.0) -> bool`: Convenience function to solve a CNF file
+- `solve_cnf_file(file_path: str, verbosity: int = 0, timeout: float = 0.0) -> bool`: Convenience function to solve a CNF file
 
 ## License
 

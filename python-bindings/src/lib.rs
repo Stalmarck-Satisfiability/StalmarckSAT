@@ -70,7 +70,7 @@ impl PyStalmarckSolver {
 /// Args:
 ///     file_path: Path to the DIMACS CNF file
 ///     verbosity: Verbosity level (0-2), default 0
-///     timeout: Timeout in seconds, default 30.0
+///     timeout: Timeout in seconds, default 0.0 (no timeout)
 ///
 /// Returns:
 ///     bool: True if satisfiable, False if unsatisfiable

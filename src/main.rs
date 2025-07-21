@@ -17,7 +17,7 @@ struct Args {
     verbosity: i32,
 
     /// Timeout in seconds
-    #[arg(short, long, default_value_t = 30.0)]
+    #[arg(short, long, default_value_t = 0.0)]
     timeout: f64,
 
     /// Dilemma rule strategy
@@ -25,7 +25,7 @@ struct Args {
     dilemma: Dilemma,
 
     /// Simple rule application policy
-    #[arg(long = "simple-rule", value_enum, default_value_t = SimpleRuleStrategy::None)]
+    #[arg(long = "simple-rule", value_enum, default_value_t = SimpleRuleStrategy::Dpo)]
     simple_rule_strategy: SimpleRuleStrategy,
 }
 

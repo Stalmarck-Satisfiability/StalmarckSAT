@@ -99,9 +99,11 @@ print("SAT" if result else "UNSAT")
 stalmarck_sat [OPTIONS] <FILE_PATH>
 
 Options:
-  -v, --verbosity <VERBOSITY>  Verbosity level (0-2) [default: 1]
-  -t, --timeout <TIMEOUT>      Timeout in seconds [default: no timeout]
-  -h, --help                   Print help
+  -v, --verbosity <VERBOSITY>      Verbosity level (0-2) [default: 1]
+  -t, --timeout <TIMEOUT>          Timeout in seconds [default: no timeout]
+      --dilemma <DILEMMA>          Dilemma rule strategy [default: cdb] [possible values: cdb, none]
+      --simple-rule <SIMPLE_RULE>  Simple rule application policy [default: dpo] [possible values: none, dpo]
+  -h, --help                       Print help
 ```
 
 ### Example DIMACS CNF Format
